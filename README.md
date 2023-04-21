@@ -22,6 +22,10 @@ Log screen:
 
 ## Requirements
 
+It _may_ be necessary to update the `amdgpu.ppfeaturemask` parameter to enable data collection. 
+
+This is assumed for *control* over the elements being monitored. Untested without. See [this Arch Wiki doc](https://wiki.archlinux.org/title/AMDGPU#Boot_parameter) for context
+
 The following unusual modules are required:
  - [textual](https://textual.textualize.io/reference/)
  - [humanfriendly](https://pypi.org/project/humanfriendly/)
