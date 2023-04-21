@@ -1,18 +1,18 @@
 GPUStatsWidget {
-    layout: grid;
-    grid-size: 3;
-    grid-gutter: 2 4;
-    background: $boost;
-    height: 10;
-    margin: 1;
-    min-width: 50;
-    padding: 1;
+	layout: grid;
+	grid-size: 3;
+	grid-gutter: 2 4;
+	background: $boost;
+	height: 10;
+	margin: 1;
+	min-width: 50;
+	padding: 1;
 }
 
 /* for colors, see: https://textual.textualize.io/guide/design/#theme-reference */
 
 .box {
-        padding: 1;
+	padding: 1;
 	height: 100%;
 /*	border: ascii $primary-background;*/
 	border: solid $primary-background;
@@ -20,6 +20,6 @@ GPUStatsWidget {
 }
 
 .statlabel {
-        padding: 1;
+	padding: 1;
 	height: 100%;
 }
