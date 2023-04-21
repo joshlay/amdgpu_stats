@@ -15,7 +15,7 @@ Simple TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GP
 *Note:* Tested _only_ on `RX6000` series cards -- will support more with help, please file an issue.
 
 ## Requirements
-Only `Linux` is supported. Information heavily relies on the `hwmon` interfaces in `sysfs`.
+Only `Linux` is supported. Information is _completely_ sourced from interfaces in `sysfs`.
 
 ### Python
 The Fedora base repositories provide the requirements with these packages:
