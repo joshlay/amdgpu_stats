@@ -12,14 +12,6 @@ Simple TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GP
    - Configured
    - Board capability
 
-## Screenshots
-
-Main screen:
-![Screenshot of main screen](main.png "Main screen")
-
-Log screen:
-![Screenshot of log screen](logging.png "Logging screen")
-
 ## Requirements
 
 It _may_ be necessary to update the `amdgpu.ppfeaturemask` parameter to enable data collection. 
@@ -31,3 +23,11 @@ The following unusual modules are required:
  - [humanfriendly](https://pypi.org/project/humanfriendly/)
 
 This list *may not* be maintained; consider imports / your environment
+
+## Screenshots
+
+Main screen:
+![Screenshot of main screen](main.png "Main screen")
+
+Log screen:
+![Screenshot of log screen](logging.png "Logging screen")
