@@ -2,9 +2,8 @@
 """Pretty Textual-based stats for AMD GPUs
 
 TODO: restore argparse / --card, in case detection fails"""
-from os import path, listdir
+from os import path
 import glob
-import re
 import sys
 
 # from textual import events
@@ -17,52 +16,34 @@ from humanfriendly import format_size
 
 
 def find_card():
-    """searches /sys/class/drm/*/status for connected cards
+    """searches contents of /sys/class/drm/card*/device/hwmon/hwmon*/name
 
-    TODO: move the name/amdgpu check from find_hwmon, here
-      if none found, return None.
-      script should exit: reporting no AMD GPUs found"""
-    _card = False
-    status_path = "/sys/class/drm/*/status"
-    files = glob.glob(status_path)
-    for file in files:
-        with open(file, "r", encoding="utf-8") as _f:
-            for line in _f:
-                if re.search(r"^connected", line):
-                    # found a connected card/display
-                    _card = path.basename(path.dirname(file)).split("-")[0]
-    return _card
+    looking for 'amdgpu' to find a card to monitor
 
-
-def find_hwmon(card):
-    """for the provided `card`, find the hwmon path that provides stats"""
-    hwmon_src = path.join("/sys/class/drm/", card, "device/hwmon/")
-    for hwmon_candidate in listdir(hwmon_src):
-        name_file = path.join(hwmon_src, hwmon_candidate, "name")
-        # check if the name file exists
-        if path.exists(name_file):
-            # read the contents of the name file
-            with open(name_file, "r", encoding="utf-8") as name_fh:
-                name = name_fh.read().strip()
-
-            # check if the name matches the desired GPU
-            if name == "amdgpu":
-                # found the correct hwmon directory
-                # print(f'found amdgpu hwmon: {hwmon_candidate}')
-                hwmon_path = path.join(hwmon_src, hwmon_candidate)
-                return hwmon_path
-    # if nothing found, return None
-    return None
+    returns the cardN name and hwmon directory for stats"""
+    _card = None
+    _hwmon_dir = None
+    hwmon_names_glob = '/sys/class/drm/card*/device/hwmon/hwmon*/name'
+    hwmon_names = glob.glob(hwmon_names_glob)
+    for hwmon_name_file in hwmon_names:
+        with open(hwmon_name_file, "r", encoding="utf-8") as _f:
+            if _f.read().strip() == 'amdgpu':
+                # found an amdgpu
+                # note: if multiple are found, last will be used/watched
+                # will be configurable in the future, may prompt
+                _card = hwmon_name_file.split('/')[4]
+                _hwmon_dir = path.dirname(hwmon_name_file)
+    return _card, _hwmon_dir
 
 
-def read_stat(file):
+def read_stat(file: str) -> str:
     """given `file`, return the contents"""
     with open(file, "r", encoding="utf-8") as _fh:
         data = _fh.read().strip()
         return data
 
 
-def format_frequency(frequency_hz):
+def format_frequency(frequency_hz) -> str:
     """takes a frequency and formats it with an appropriate Hz suffix"""
     return (
         format_size(int(frequency_hz), binary=False)
@@ -258,14 +239,12 @@ Board cap:    {micro_watts['capability']}W"""
 
 
 if __name__ == "__main__":
-    CARD = find_card()
+    # detect AMD GPU, exit if unfound
+    CARD, hwmon_dir = find_card()
+    if CARD is None:
+        sys.exit('Could not find an AMD GPU, exiting.')
+
     card_dir = path.join("/sys/class/drm/", CARD)  # eg: /sys/class/drm/card0/
-    hwmon_dir = find_hwmon(CARD)
-    if hwmon_dir is None:
-        sys.exit(
-            """Could not determine hwmon, exiting.
-    Consider '--card', perhaps {CARD} is incorrect"""
-        )
     # ref: https://docs.kernel.org/gpu/amdgpu/thermal.html
     src_files = {'pwr_limit': path.join(hwmon_dir, "power1_cap"),
                  'pwr_average': path.join(hwmon_dir, "power1_average"),
