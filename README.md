@@ -39,3 +39,4 @@ Main screen:
 
 Log screen:
 ![Screenshot of log screen](logging.png "Logging screen")
+Only the statistic files and toggling Dark/Light mode are logged; metrics will be added with a configurable interval.
