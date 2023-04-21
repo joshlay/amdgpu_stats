@@ -1,5 +1,7 @@
 #!/usr/bin/python3
-"""Pretty Textual-based stats for AMD GPUs"""
+"""Pretty Textual-based stats for AMD GPUs
+
+TODO: restore argparse / --card, in case detection fails"""
 from os import path, listdir
 import glob
 import re
@@ -15,7 +17,11 @@ from humanfriendly import format_size
 
 
 def find_card():
-    """searches /sys/class/drm/*/status for connected cards"""
+    """searches /sys/class/drm/*/status for connected cards
+
+    TODO: move the name/amdgpu check from find_hwmon, here
+      if none found, return None.
+      script should exit: reporting no AMD GPUs found"""
     _card = False
     status_path = "/sys/class/drm/*/status"
     files = glob.glob(status_path)
