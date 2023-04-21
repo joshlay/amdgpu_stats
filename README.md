@@ -19,3 +19,11 @@ Main screen:
 
 Log screen:
 ![Screenshot of log screen](logging.png "Logging screen")
+
+## Requirements
+
+The following unusual modules are required:
+ - [textual](https://textual.textualize.io/reference/)
+ - [humanfriendly](https://pypi.org/project/humanfriendly/)
+
+This list *may not* be maintained; consider imports / your environment
