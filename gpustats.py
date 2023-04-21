@@ -152,7 +152,10 @@ class MiscDisplay(Static):
     """A widget to display misc. GPU stats."""
 
     # for bringing in the log writing method
-    misc_stats = reactive({"util_pct": 0, "temp": 0})
+    misc_stats = reactive({"util_pct": 0,
+                           "temp": 0,
+                           "fan_rpm": 0,
+                           "fan_rpm_target": 0})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -171,12 +174,16 @@ class MiscDisplay(Static):
         self.misc_stats = {
             "util_pct": read_stat(src_files['busy_pct']),
             "temp": int(int(read_stat(src_files['temp_c'])) / 1000),
+            "fan_rpm": read_stat(src_files['fan_rpm']),
+            "fan_rpm_target": read_stat(src_files['fan_rpm_target'])
         }
 
     def watch_misc_stats(self, misc_stats: dict) -> None:
         """Called when the clocks attribute changes."""
-        output = f"""Temp:    {misc_stats['temp']}C
-Util:    {misc_stats['util_pct']}%"""
+        output = f"""Utilization:    {misc_stats['util_pct']}%
+Temperature:    {misc_stats['temp']}C
+Fan RPM:        {misc_stats['fan_rpm']}
+Target:         {misc_stats['fan_rpm_target']}"""
         self.update(output)
 
 
@@ -259,6 +266,7 @@ if __name__ == "__main__":
             """Could not determine hwmon, exiting.
     Consider '--card', perhaps {CARD} is incorrect"""
         )
+    # ref: https://docs.kernel.org/gpu/amdgpu/thermal.html
     src_files = {'pwr_limit': path.join(hwmon_dir, "power1_cap"),
                  'pwr_average': path.join(hwmon_dir, "power1_average"),
                  'pwr_cap': path.join(hwmon_dir, "power1_cap_max"),
@@ -267,6 +275,9 @@ if __name__ == "__main__":
                  'core_voltage': path.join(hwmon_dir, "in0_input"),
                  'memory_clock': path.join(hwmon_dir, "freq2_input"),
                  'busy_pct': path.join(card_dir, "device/gpu_busy_percent"),
-                 'temp_c': path.join(hwmon_dir, "temp1_input")}
+                 'temp_c': path.join(hwmon_dir, "temp1_input"),
+                 'fan_rpm': path.join(hwmon_dir, "fan1_input"),
+                 'fan_rpm_target': path.join(hwmon_dir, "fan1_target"),
+                 }
     app = GPUStats()
     app.run()
