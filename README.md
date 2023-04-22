@@ -2,7 +2,10 @@
 
 Simple TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GPU statistics:
 - GPU Utilization
-- Temperature
+- Temperatures _(as applicable)_
+    - Edge
+    - Junction
+    - Memory
 - Core clock
 - Core voltage
 - Memory clock

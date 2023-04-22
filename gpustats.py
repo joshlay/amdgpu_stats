@@ -135,52 +135,71 @@ class GPUStats(App):
 
 class MiscDisplay(Static):
     """A widget to display misc. GPU stats."""
-
-    # for bringing in the log writing method
-    misc_stats = reactive({"util_pct": 0,
-                           "temp": 0,
-                           "fan_rpm": 0,
-                           "fan_rpm_target": 0})
+    # construct the misc. stats dict; appended by discovered temperature nodes
+    # used to make a 'reactive' object
+    fan_stats = reactive({"fan_rpm": 0,
+                          "fan_rpm_target": 0})
+    temp_stats = reactive({})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.timer_misc = None
+        self.timer_fan = None
+        self.timer_temp = None
 
     def compose(self) -> ComposeResult:
-        yield Horizontal(Label("Utilization:",), Label("", id="util_pct", classes="statvalue"))
-        yield Horizontal(Label("Temperature:",), Label("", id="temp_c", classes="statvalue"))
+        for temp_node in temp_files:
+            # capitalize the first letter for display
+            caption = temp_node[0].upper() + temp_node[1:]
+            yield Horizontal(Label(f'[bold]{caption}[/] temp:',), Label("", id="temp_" + temp_node, classes="statvalue"))
         yield Horizontal(Label("[underline]Current[/] fan RPM:",), Label("", id="fan_rpm", classes="statvalue"))
         yield Horizontal(Label("[underline]Target[/] fan RPM:",), Label("", id="fan_rpm_target", classes="statvalue"))
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
-        self.timer_misc = self.set_interval(1, self.update_misc_stats)
+        self.timer_fan = self.set_interval(1, self.update_fan_stats)
+        self.timer_temp = self.set_interval(1, self.update_temp_stats)
 
-    def update_misc_stats(self) -> None:
-        """Method to update the 'misc' values to current measurements.
-        Utilization % and temperature (C)
+    def update_fan_stats(self) -> None:
+        """Method to update the 'fan' values to current measurements.
 
         Run by a timer created 'on_mount'"""
-        self.misc_stats = {
-            "util_pct": read_stat(src_files['busy_pct']),
-            "temp": int(int(read_stat(src_files['temp_c'])) / 1000),
-            "fan_rpm": read_stat(src_files['fan_rpm']),
-            "fan_rpm_target": read_stat(src_files['fan_rpm_target'])
+        val_update = {
+                "fan_rpm": read_stat(src_files['fan_rpm']),
+                "fan_rpm_target": read_stat(src_files['fan_rpm_target'])
         }
+        self.fan_stats = val_update
 
-    def watch_misc_stats(self, misc_stats: dict) -> None:
+    def update_temp_stats(self) -> None:
+        """Method to update the 'temperature' values to current measurements.
+
+        Run by a timer created 'on_mount'"""
+        val_update = {}
+        for temp_node, temp_file in temp_files.items():
+            # iterate through the discovered temperature nodes
+            # ... updating the dictionary with new stats
+            _content = f'{int(read_stat(temp_file)) / 1000:.0f}C'
+            val_update[temp_node] = _content
+        self.temp_stats = val_update
+
+    def watch_fan_stats(self, fan_stats: dict) -> None:
         """Called when the clocks attribute changes.
          - Updates label values
          - Casting inputs to string to avoid type problems w/ int/None"""
-        self.query_one("#util_pct", Static).update(f"{misc_stats['util_pct']}%")
-        self.query_one("#temp_c", Static).update(f"{misc_stats['temp']}C")
-        self.query_one("#fan_rpm", Static).update(f"{misc_stats['fan_rpm']}")
-        self.query_one("#fan_rpm_target", Static).update(f"{misc_stats['fan_rpm_target']}")
+        self.query_one("#fan_rpm", Static).update(f"{fan_stats['fan_rpm']}")
+        self.query_one("#fan_rpm_target", Static).update(f"{fan_stats['fan_rpm_target']}")
+
+    def watch_temp_stats(self, temp_stats: dict) -> None:
+        """Called when the clocks attribute changes, updates labels"""
+        for temp_node in temp_files:
+            # check first if the reactive object has been updated with keys
+            if temp_node in temp_stats:
+                stat_dict_item = temp_stats[temp_node]
+                self.query_one("#temp_" + temp_node, Static).update(stat_dict_item)
 
 
 class ClockDisplay(Static):
     """A widget to display GPU power stats."""
-    clocks = reactive({"sclk": 0, "mclk": 0, "core_voltage": 0})
+    core_vals = reactive({"sclk": 0, "mclk": 0, "voltage": 0, "util_pct": 0})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -188,32 +207,35 @@ class ClockDisplay(Static):
 
     def compose(self) -> ComposeResult:
         yield Horizontal(Label("Core clock:",), Label("", id="clk_core_val", classes="statvalue"))
+        yield Horizontal(Label("Utilization:",), Label("", id="util_pct", classes="statvalue"))
         yield Horizontal(Label("Core voltage:",), Label("", id="clk_voltage_val", classes="statvalue"))
         yield Horizontal(Label("Memory clock:"), Label("", id="clk_memory_val", classes="statvalue"))
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
-        self.timer_clocks = self.set_interval(1, self.update_clocks)
+        self.timer_clocks = self.set_interval(1, self.update_core_vals)
 
-    def update_clocks(self) -> None:
+    def update_core_vals(self) -> None:
         """Method to update GPU clock values to the current measurements.
         Run by a timer created 'on_mount'"""
 
-        self.clocks = {
+        self.core_vals = {
             "sclk": format_frequency(read_stat(src_files['core_clock'])),
             "mclk": format_frequency(read_stat(src_files['memory_clock'])),
-            "core_voltage": float(
+            "voltage": float(
                 f"{int(read_stat(src_files['core_voltage'])) / 1000:.2f}"
             ),
+            "util_pct": read_stat(src_files['busy_pct']),
         }
 
-    def watch_clocks(self, clocks: dict) -> None:
+    def watch_core_vals(self, core_vals: dict) -> None:
         """Called when the clocks attribute changes
          - Updates label values
          - Casting inputs to string to avoid type problems w/ int/None"""
-        self.query_one("#clk_core_val", Static).update(f"{clocks['sclk']}")
-        self.query_one("#clk_voltage_val", Static).update(f"{clocks['core_voltage']}V")
-        self.query_one("#clk_memory_val", Static).update(f"{clocks['mclk']}")
+        self.query_one("#clk_core_val", Static).update(f"{core_vals['sclk']}")
+        self.query_one("#util_pct", Static).update(f"{core_vals['util_pct']}%")
+        self.query_one("#clk_voltage_val", Static).update(f"{core_vals['voltage']}V")
+        self.query_one("#clk_memory_val", Static).update(f"{core_vals['mclk']}")
 
 
 class PowerDisplay(Static):
@@ -283,5 +305,27 @@ if __name__ == "__main__":
                  'fan_rpm': path.join(hwmon_dir, "fan1_input"),
                  'fan_rpm_target': path.join(hwmon_dir, "fan1_target"),
                  }
+    # notes:
+    #   assumptions are made that freq{1,2}_input files are sclk/mclk
+    #   contents of files named freq{1,2}_label can determine this reliably
+    #   similarly:
+    #      'in0_input' has a peer named 'in0_label'
+    #      should contain 'vddgfx' to indicate core voltage
+    #   TODO: implement ^
+    #
+    # determine temperature nodes, construct an empty dict to store them
+    temp_files = {}
+    temp_node_labels = glob.glob(path.join(hwmon_dir, "temp*_label"))
+    for temp_node_label_file in temp_node_labels:
+        # determine the base node id, eg: temp1
+        # construct the path to the file that will label it. ie: edge/junction
+        temp_node_id = path.basename(temp_node_label_file).split('_')[0]
+        temp_node_value_file = path.join(hwmon_dir, f"{temp_node_id}_input")
+        with open(temp_node_label_file, 'r', encoding='utf-8') as _node:
+            temp_node_name = _node.read().strip()
+        print(f'found temp: {temp_node_name} (id: {temp_node_id})')
+        # add the node name/type and the corresponding temp file to the dict
+        temp_files[temp_node_name] = temp_node_value_file
+
     app = GPUStats()
     app.run()
