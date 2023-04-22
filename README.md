@@ -15,10 +15,16 @@ Simple TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GP
     - Current
     - Target
 
-*Note:* Tested _only_ on `RX6000` series cards -- will support more with help, please file an issue.
+*Note:* Tested _only_ on `RX6000` series cards; more may be supported. Please file an issue if incompatibility is found!
 
 ## Requirements
 Only `Linux` is supported. Information is _completely_ sourced from interfaces in `sysfs`.
+
+It _may_ be necessary to update the `amdgpu.ppfeaturemask` parameter to enable metrics.
+
+This is assumed present for *control* over the elements being monitored. Untested without. 
+
+See [this Arch Wiki entry](https://wiki.archlinux.org/title/AMDGPU#Boot_parameter) for context.
 
 ### Python
 The Fedora base repositories provide the requirements with these packages:
@@ -26,11 +32,6 @@ The Fedora base repositories provide the requirements with these packages:
  - `python3-textual`
 
 See [requirements.txt](requirements.txt) for other distributions
-
-### Kernel
-It _may_ be necessary to update the `amdgpu.ppfeaturemask` parameter to enable data collection. 
-
-This is assumed for *control* over the elements being monitored. Untested without. See [this](https://wiki.archlinux.org/title/AMDGPU#Boot_parameter) for context
 
 ## Screenshots
 
