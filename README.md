@@ -15,7 +15,7 @@ Simple TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GP
     - Current
     - Target
 
-*Note:* Tested _only_ on `RX6000` series cards; more may be supported. Please file an issue if incompatibility is found!
+Tested _only_ on `RX6000` series cards; more may be supported. Please file an issue if finding incompatibility!
 
 ## Requirements
 Only `Linux` is supported. Information is _completely_ sourced from interfaces in `sysfs`.
