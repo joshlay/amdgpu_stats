@@ -184,14 +184,15 @@ class MiscDisplay(Static):
         self.temp_stats = val_update
 
     def watch_fan_stats(self, fan_stats: dict) -> None:
-        """Called when the clocks attribute changes.
+        """Called when the 'fan_stats' reactive attr changes.
+
          - Updates label values
          - Casting inputs to string to avoid type problems w/ int/None"""
         self.query_one("#fan_rpm", Static).update(f"{fan_stats['fan_rpm']}")
         self.query_one("#fan_rpm_target", Static).update(f"{fan_stats['fan_rpm_target']}")
 
     def watch_temp_stats(self, temp_stats: dict) -> None:
-        """Called when the clocks attribute changes, updates labels"""
+        """Called when the temp_stats reactive attr changes, updates labels"""
         for temp_node in temp_files:
             # check first if the reactive object has been updated with keys
             if temp_node in temp_stats:
