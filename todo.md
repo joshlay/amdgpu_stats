@@ -10,4 +10,8 @@
 
 - restore `argparse`
     - primarily: `--card` / `-c`, to skip `amdgpu` device detection
-    - perhaps an update interval for the Textual stat-updating timers
+        - will expect `cardN` or `renderANNN` from `/dev/dri/` 
+        - provides the (AMD) GPU intended to be monitored
+    - secondarily:
+        - preferred unit for clocks
+        - perhaps an update interval for the Textual stat-updating timers
