@@ -19,7 +19,6 @@ GPUStatsWidget {
 	content-align: center middle;
 }
 
-.statlabel {
-	padding: 1;
-	height: 100%;
+.statvalue {
+	dock: right;
 }

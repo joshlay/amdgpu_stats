@@ -1,14 +1,18 @@
 #!/usr/bin/python3
 """Pretty Textual-based stats for AMD GPUs
 
-TODO: restore argparse / --card, in case detection fails"""
+TODO: restore argparse / --card, in case detection fails
+
+rich markup reference:
+    https://rich.readthedocs.io/en/stable/markup.html
+"""
 from os import path
 import glob
 import sys
 
 # from textual import events
 from textual.app import App, ComposeResult
-from textual.containers import Container
+from textual.containers import Container, Horizontal
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Header, Footer, Static, TextLog, Label
@@ -143,7 +147,10 @@ class MiscDisplay(Static):
         self.timer_misc = None
 
     def compose(self) -> ComposeResult:
-        yield Label("Misc:", classes="statlabel")
+        yield Horizontal(Label("Utilization:",), Label("", id="util_pct", classes="statvalue"))
+        yield Horizontal(Label("Temperature:",), Label("", id="temp_c", classes="statvalue"))
+        yield Horizontal(Label("[underline]Current[/] fan RPM:",), Label("", id="fan_rpm", classes="statvalue"))
+        yield Horizontal(Label("[underline]Target[/] fan RPM:",), Label("", id="fan_rpm_target", classes="statvalue"))
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
@@ -151,7 +158,9 @@ class MiscDisplay(Static):
 
     def update_misc_stats(self) -> None:
         """Method to update the 'misc' values to current measurements.
-        Utilization % and temperature (C)"""
+        Utilization % and temperature (C)
+
+        Run by a timer created 'on_mount'"""
         self.misc_stats = {
             "util_pct": read_stat(src_files['busy_pct']),
             "temp": int(int(read_stat(src_files['temp_c'])) / 1000),
@@ -160,17 +169,17 @@ class MiscDisplay(Static):
         }
 
     def watch_misc_stats(self, misc_stats: dict) -> None:
-        """Called when the clocks attribute changes."""
-        output = f"""Utilization:    {misc_stats['util_pct']}%
-Temperature:    {misc_stats['temp']}C
-Fan RPM:        {misc_stats['fan_rpm']}
-Target:         {misc_stats['fan_rpm_target']}"""
-        self.update(output)
+        """Called when the clocks attribute changes.
+         - Updates label values
+         - Casting inputs to string to avoid type problems w/ int/None"""
+        self.query_one("#util_pct", Static).update(f"{misc_stats['util_pct']}%")
+        self.query_one("#temp_c", Static).update(f"{misc_stats['temp']}C")
+        self.query_one("#fan_rpm", Static).update(f"{misc_stats['fan_rpm']}")
+        self.query_one("#fan_rpm_target", Static).update(f"{misc_stats['fan_rpm_target']}")
 
 
 class ClockDisplay(Static):
     """A widget to display GPU power stats."""
-
     clocks = reactive({"sclk": 0, "mclk": 0, "core_voltage": 0})
 
     def __init__(self, *args, **kwargs):
@@ -178,14 +187,18 @@ class ClockDisplay(Static):
         self.timer_clocks = None
 
     def compose(self) -> ComposeResult:
-        yield Label("Clocks:", classes="statlabel")
+        yield Horizontal(Label("Core clock:",), Label("", id="clk_core_val", classes="statvalue"))
+        yield Horizontal(Label("Core voltage:",), Label("", id="clk_voltage_val", classes="statvalue"))
+        yield Horizontal(Label("Memory clock:"), Label("", id="clk_memory_val", classes="statvalue"))
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
         self.timer_clocks = self.set_interval(1, self.update_clocks)
 
     def update_clocks(self) -> None:
-        """Method to update GPU clock values to the current measurements."""
+        """Method to update GPU clock values to the current measurements.
+        Run by a timer created 'on_mount'"""
+
         self.clocks = {
             "sclk": format_frequency(read_stat(src_files['core_clock'])),
             "mclk": format_frequency(read_stat(src_files['memory_clock'])),
@@ -195,10 +208,12 @@ class ClockDisplay(Static):
         }
 
     def watch_clocks(self, clocks: dict) -> None:
-        """Called when the clocks attribute changes."""
-        output = f"""Core:      {clocks['sclk']} @ {clocks['core_voltage']}V
-Memory:    {clocks['mclk']}"""
-        self.update(output)
+        """Called when the clocks attribute changes
+         - Updates label values
+         - Casting inputs to string to avoid type problems w/ int/None"""
+        self.query_one("#clk_core_val", Static).update(f"{clocks['sclk']}")
+        self.query_one("#clk_voltage_val", Static).update(f"{clocks['core_voltage']}V")
+        self.query_one("#clk_memory_val", Static).update(f"{clocks['mclk']}")
 
 
 class PowerDisplay(Static):
@@ -214,14 +229,23 @@ class PowerDisplay(Static):
         self.timer_micro_watts = None
 
     def compose(self) -> ComposeResult:
-        yield Label("Power:", classes="statlabel")
+        yield Horizontal(Label("Power usage:",),
+                         Label("", id="pwr_avg_val", classes="statvalue"))
+        yield Horizontal(Label("Power limit:",),
+                         Label("", id="pwr_lim_val", classes="statvalue"))
+        yield Horizontal(Label("[underline]Default[/] limit:",),
+                         Label("", id="pwr_def_val", classes="statvalue"))
+        yield Horizontal(Label("Board capability:",),
+                         Label("", id="pwr_cap_val", classes="statvalue"))
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
         self.timer_micro_watts = self.set_interval(1, self.update_micro_watts)
 
     def update_micro_watts(self) -> None:
-        """Method to update GPU power values to current measurements."""
+        """Method to update GPU power values to current measurements.
+
+        Run by a timer created 'on_mount'"""
         self.micro_watts = {
             "limit": int(int(read_stat(src_files['pwr_limit'])) / 1000000),
             "average": int(int(read_stat(src_files['pwr_average'])) / 1000000),
@@ -230,12 +254,13 @@ class PowerDisplay(Static):
         }
 
     def watch_micro_watts(self, micro_watts: dict) -> None:
-        """Called when the micro_watts attributes change."""
-        output = f"""Using:        {micro_watts['average']}W
-Set limit:    {micro_watts['limit']}W
-Default:      {micro_watts['default']}W
-Board cap:    {micro_watts['capability']}W"""
-        self.update(output)
+        """Called when the micro_watts attributes change.
+         - Updates label values
+         - Casting inputs to string to avoid type problems w/ int/None"""
+        self.query_one("#pwr_avg_val", Static).update(f"{micro_watts['average']}W")
+        self.query_one("#pwr_lim_val", Static).update(f"{micro_watts['limit']}W")
+        self.query_one("#pwr_def_val", Static).update(f"{micro_watts['default']}W")
+        self.query_one("#pwr_cap_val", Static).update(f"{micro_watts['capability']}W")
 
 
 if __name__ == "__main__":
