@@ -115,6 +115,8 @@ class GPUStats(App):
         self.update_log("[bold italic]Information sources:[/]")
         for metric, source in src_files.items():
             self.update_log(f'[bold]  {metric}:[/] {source}')
+        for metric, source in temp_files.items():
+            self.update_log(f'[bold]  {metric} temperature:[/] {source}')
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
