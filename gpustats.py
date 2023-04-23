@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 """Pretty Textual-based stats for AMD GPUs
 
-TODO: restore argparse / --card, in case detection fails
+TODO: restore argparse / --card, in case detection fails.
+      will require separating the hwmon finding tasks from 'find_card'
 
 rich markup reference:
     https://rich.readthedocs.io/en/stable/markup.html
 """
+import argparse
 from os import path
 import glob
 import sys
@@ -158,8 +160,8 @@ class MiscDisplay(Static):
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
-        self.timer_fan = self.set_interval(1, self.update_fan_stats)
-        self.timer_temp = self.set_interval(1, self.update_temp_stats)
+        self.timer_fan = self.set_interval(interval, self.update_fan_stats)
+        self.timer_temp = self.set_interval(interval, self.update_temp_stats)
 
     def update_fan_stats(self) -> None:
         """Method to update the 'fan' values to current measurements.
@@ -216,7 +218,7 @@ class ClockDisplay(Static):
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
-        self.timer_clocks = self.set_interval(1, self.update_core_vals)
+        self.timer_clocks = self.set_interval(interval, self.update_core_vals)
 
     def update_core_vals(self) -> None:
         """Method to update GPU clock values to the current measurements.
@@ -265,7 +267,7 @@ class PowerDisplay(Static):
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
-        self.timer_micro_watts = self.set_interval(1, self.update_micro_watts)
+        self.timer_micro_watts = self.set_interval(interval, self.update_micro_watts)
 
     def update_micro_watts(self) -> None:
         """Method to update GPU power values to current measurements.
@@ -289,8 +291,32 @@ class PowerDisplay(Static):
 
 
 if __name__ == "__main__":
-    # detect AMD GPU, exit if unfound
     CARD, hwmon_dir = find_card()
+    # do the argparse dance
+    p = argparse.ArgumentParser(
+            # show the value for defaults in '-h/--help'
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            description="Show some basic AMD GPU stats -- tested on RX6xxx series",
+            )
+#    p.add_argument(
+#            "-c",
+#            "--card",
+#            type=str,
+#            default=AUTO_CARD,
+#            help="The GPU to inspect, see 'ls -lad /sys/class/drm/card*'",
+#            )
+    p.add_argument(
+            "-i",
+            "--interval",
+            type=float,
+            default=1.0,
+            help="The delay (in seconds) between polling for data",
+            )
+    args = p.parse_args()
+    interval = args.interval
+#    CARD = args.card
+
+    # detect AMD GPU, exit if unfound
     if CARD is None:
         sys.exit('Could not find an AMD GPU, exiting.')
 
