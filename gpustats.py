@@ -151,18 +151,18 @@ class MiscDisplay(Static):
         self.timer_temp = None
 
     def compose(self) -> ComposeResult:
-        yield Horizontal(Label("[underline]Temperatures:"),
+        yield Horizontal(Label("[underline]Temperatures"),
                          Label("", classes="statvalue"))
         for temp_node in temp_files:
             # capitalize the first letter for display
             caption = temp_node[0].upper() + temp_node[1:]
-            yield Horizontal(Label(f'[bold]  {caption}:[/]',),
+            yield Horizontal(Label(f'  {caption}:',),
                              Label("", id="temp_" + temp_node, classes="statvalue"))
-        yield Horizontal(Label("[underline]Fan RPM:"),
+        yield Horizontal(Label("[underline]Fan RPM"),
                          Label("", classes="statvalue"))
-        yield Horizontal(Label("[bold]  Current:[/]",),
+        yield Horizontal(Label("  Current:",),
                          Label("", id="fan_rpm", classes="statvalue"))
-        yield Horizontal(Label("[bold]  Target:[/]",),
+        yield Horizontal(Label("  Target:",),
                          Label("", id="fan_rpm_target", classes="statvalue"))
 
     def on_mount(self) -> None:
@@ -218,12 +218,15 @@ class ClockDisplay(Static):
         self.timer_clocks = None
 
     def compose(self) -> ComposeResult:
-        yield Horizontal(Label("[underline]Core:"),
+        yield Horizontal(Label("[underline]Clocks"),
                          Label("", classes="statvalue"))
         yield Horizontal(Label("  GPU Clock:",),
                          Label("", id="clk_core_val", classes="statvalue"))
         yield Horizontal(Label("  Memory clock:"),
                          Label("", id="clk_memory_val", classes="statvalue"))
+        yield Horizontal(Label(""), Label("", classes="statvalue"))  # padding to split groups
+        yield Horizontal(Label("[underline]Core"),
+                         Label("", classes="statvalue"))
         yield Horizontal(Label("  Utilization:",),
                          Label("", id="util_pct", classes="statvalue"))
         yield Horizontal(Label("  Voltage:",),
@@ -269,7 +272,7 @@ class PowerDisplay(Static):
         self.timer_micro_watts = None
 
     def compose(self) -> ComposeResult:
-        yield Horizontal(Label("[underline]Power:"),
+        yield Horizontal(Label("[underline]Power"),
                          Label("", classes="statvalue"))
         yield Horizontal(Label("  Usage:",),
                          Label("", id="pwr_avg_val", classes="statvalue"))
@@ -279,6 +282,7 @@ class PowerDisplay(Static):
                          Label("", id="pwr_def_val", classes="statvalue"))
         yield Horizontal(Label("  Board capability:",),
                          Label("", id="pwr_cap_val", classes="statvalue"))
+        yield Horizontal(Label(""), Label("", classes="statvalue"))  # bottom padding to group
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
