@@ -11,6 +11,7 @@ import argparse
 from os import path
 import glob
 import sys
+from typing import Tuple, Optional
 
 # from textual import events
 from textual.app import App, ComposeResult
@@ -21,7 +22,7 @@ from textual.widgets import Header, Footer, Static, TextLog, Label
 from humanfriendly import format_size
 
 
-def find_card():
+def find_card() -> Optional[Tuple[Optional[str], Optional[str]]]:
     """searches contents of /sys/class/drm/card*/device/hwmon/hwmon*/name
 
     looking for 'amdgpu' to find a card to monitor
@@ -337,7 +338,7 @@ if __name__ == "__main__":
     interval = p_args.interval
 #    CARD = args.card
 
-    # detect AMD GPU, exit if unfound
+    # exit if AMDGPU not found, otherwise - proceed, assigning stat files
     if CARD is None:
         sys.exit('Could not find an AMD GPU, exiting.')
 
@@ -355,14 +356,7 @@ if __name__ == "__main__":
                  'fan_rpm': path.join(hwmon_dir, "fan1_input"),
                  'fan_rpm_target': path.join(hwmon_dir, "fan1_target"),
                  }
-    # notes:
-    #   assumptions are made that freq{1,2}_input files are sclk/mclk
-    #   contents of files named freq{1,2}_label can determine this reliably
-    #   similarly:
-    #      'in0_input' has a peer named 'in0_label'
-    #      should contain 'vddgfx' to indicate core voltage
-    #   TODO: implement ^
-    #
+
     # determine temperature nodes, construct an empty dict to store them
     temp_files = {}
     temp_node_labels = glob.glob(path.join(hwmon_dir, "temp*_label"))
@@ -377,5 +371,6 @@ if __name__ == "__main__":
         # add the node name/type and the corresponding temp file to the dict
         temp_files[temp_node_name] = temp_node_value_file
 
+    # start the party, draw the app and start collecting metrics
     app = GPUStats()
     app.run()

@@ -7,11 +7,18 @@
         - a wrapper of `format_size` from `humanfriendly`
         - _(currently)_ defaults to highest sensible unit, changing on scale. 
         - often flipping between `500Mhz` / `2.6Ghz` where consistency may be preferred
-
-- restore `argparse`
-    - primarily: `--card` / `-c`, to skip `amdgpu` device detection
+- address assumptions on some statistic files
+    - Clocks:
+        - core/memory assumed provided by `freq1_input` and `freq2_input` respectively
+        - nearby files named `freq*_label` can determine this reliably
+    - Voltage:
+        - similarly, `in0_input` is the assumed voltage file
+        - indicated by `in*_label` with `vddgfx` inside
+        - no accounting for other voltage files currently; `APUs` / other cards may show more
+- `argparse` extensions
+    - restore `--card` / `-c` under `argparse`
+        - to skip `amdgpu` device detection
         - will expect `cardN` or `renderANNN` from `/dev/dri/` 
         - provides the (AMD) GPU intended to be monitored
-    - secondarily:
-        - preferred unit for clocks
-        - perhaps an update interval for the Textual stat-updating timers
+        - may require card/hwmon detection be separate tasks
+    - preferred unit for clocks
