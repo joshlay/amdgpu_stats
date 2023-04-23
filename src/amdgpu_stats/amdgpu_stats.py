@@ -11,7 +11,6 @@ from os import path
 import glob
 import sys
 from typing import Tuple, Optional
-import pkg_resources
 
 from textual.binding import Binding
 from textual.app import App, ComposeResult
