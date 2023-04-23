@@ -1,7 +1,7 @@
 GPUStatsWidget {
 	layout: grid;
 	grid-size: 3;
-	grid-gutter: 2 4;
+	grid-gutter: 2 12;
 	background: $boost;
 	height: 11;
 	min-width: 50;
@@ -15,6 +15,7 @@ GPUStatsWidget {
 /*	border: ascii $primary-background;*/
 	border: solid $primary-background;
 	content-align: center middle;
+	padding: 0 1;
 }
 
 .statvalue {
