@@ -13,7 +13,7 @@ import sys
 from typing import Tuple, Optional
 import pkg_resources
 
-# from textual import events
+from textual.binding import Binding
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal
 from textual.reactive import reactive
@@ -94,8 +94,6 @@ def format_frequency(frequency_hz) -> str:
 class LogScreen(Screen):
     """Creates a screen for the logging widget"""
 
-    BINDINGS = [("l", "app.pop_screen", "Show/hide logs")]
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.text_log = TextLog(highlight=True, markup=True)
@@ -127,23 +125,23 @@ class GPUStatsWidget(Static):
 class GPUStats(App):
     """Textual-based tool to show AMDGPU statistics."""
 
-    # determine the real path of the script, to load the stylesheet
-    CSS_PATH = pkg_resources.resource_filename('amdgpu_stats', 'amdgpu_stats.css')
+    # apply stylesheet
+    CSS_PATH = 'amdgpu_stats.css'
 
     # initialize log screen
     SCREENS = {"logs": LogScreen()}
 
     # setup keybinds
+    #    Binding("l", "push_screen('logs')", "Toggle logs", priority=True),
     BINDINGS = [
-        ("c", "toggle_dark", "Toggle colors"),
-        ("l", "push_screen('logs')", "Show/hide logs"),
-        ("q", "quit_app", "Quit"),
+        Binding("c", "toggle_dark", "Toggle colors", priority=True),
+        Binding("l", "toggle_log", "Toggle logs", priority=True),
+        Binding("q", "quit_app", "Quit", priority=True)
     ]
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header()
-        yield Footer()
         yield Container(GPUStatsWidget())
         self.update_log("[bold green]App started, logging begin!")
         self.update_log("[bold italic]Information sources:[/]")
@@ -151,6 +149,7 @@ class GPUStats(App):
             self.update_log(f'[bold]  {metric}:[/] {source}')
         for metric, source in TEMP_FILES.items():
             self.update_log(f'[bold]  {metric} temperature:[/] {source}')
+        yield Footer()
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
@@ -162,6 +161,13 @@ class GPUStats(App):
         message = "Exiting on user request"
         self.update_log(f"[bold]{message}")
         self.exit(message)
+
+    def action_toggle_log(self) -> None:
+        """Toggle between the main screen and the LogScreen."""
+        if isinstance(self.screen, LogScreen):
+            self.pop_screen()
+        else:
+            self.push_screen("logs")
 
     def update_log(self, message: str) -> None:
         """Update the TextLog widget with a new message."""
