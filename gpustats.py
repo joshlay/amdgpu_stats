@@ -276,13 +276,15 @@ class PowerDisplay(Static):
                          Label("", classes="statvalue"))
         yield Horizontal(Label("  Usage:",),
                          Label("", id="pwr_avg_val", classes="statvalue"))
-        yield Horizontal(Label("  [bold]Set[/] limit:",),
+        yield Horizontal(Label(""), Label("", classes="statvalue"))  # padding to split groups
+        yield Horizontal(Label("[underline]Limits"),
+                         Label("", classes="statvalue"))
+        yield Horizontal(Label("  Configured:",),
                          Label("", id="pwr_lim_val", classes="statvalue"))
-        yield Horizontal(Label("  [bold]Default[/] limit:",),
+        yield Horizontal(Label("  Default:",),
                          Label("", id="pwr_def_val", classes="statvalue"))
         yield Horizontal(Label("  Board capability:",),
                          Label("", id="pwr_cap_val", classes="statvalue"))
-        yield Horizontal(Label(""), Label("", classes="statvalue"))  # bottom padding to group
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
