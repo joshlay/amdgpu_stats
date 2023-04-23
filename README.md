@@ -20,10 +20,10 @@ Simple TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GP
     - Target
 
 Main screen:
-![Screenshot of main screen](screens/main.png "Main screen")
+![Screenshot of main screen](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/main.png "Main screen")
 
 Log screen:
-![Screenshot of log screen](screens/logging.png "Logging screen")
+![Screenshot of log screen](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/logging.png "Logging screen")
 
 Statistics are not logged; only toggling Dark/light mode and the stat names / source files.
 
