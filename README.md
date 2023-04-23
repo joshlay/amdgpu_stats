@@ -29,6 +29,11 @@ Statistics are not logged; only toggling Dark/light mode and the stat names / so
 
 Tested _only_ on `RX6000` series cards; more may be supported. Please file an issue if finding incompatibility!
 
+## Installation / Usage
+```
+pip install amdgpu-stats
+```
+Once installed, run `amdgpu-stats` in your terminal of choice
 ## Requirements
 Only `Linux` is supported. Information is _completely_ sourced from interfaces in `sysfs`.
 
@@ -37,10 +42,3 @@ It _may_ be necessary to update the `amdgpu.ppfeaturemask` parameter to enable m
 This is assumed present for *control* over the elements being monitored. Untested without. 
 
 See [this Arch Wiki entry](https://wiki.archlinux.org/title/AMDGPU#Boot_parameter) for context.
-
-### Python
-The Fedora base repositories provide the requirements with these packages:
- - `python3-humanfriendly`
- - `python3-textual`
-
-See [requirements.txt](requirements.txt) for other distributions
