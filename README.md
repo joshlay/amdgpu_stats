@@ -1,6 +1,7 @@
 # amdgpu_stats
 
-Simple TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GPU statistics:
+Simple TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GPU statistics
+
 - GPU Utilization
 - Temperatures _(as applicable)_
     - Edge
@@ -17,6 +18,14 @@ Simple TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GP
  - Fan RPM
     - Current
     - Target
+
+Main screen:
+![Screenshot of main screen](screens/main.png "Main screen")
+
+Log screen:
+![Screenshot of log screen](screens/logging.png "Logging screen")
+
+Statistics are not logged; only toggling Dark/light mode and the stat names / source files.
 
 Tested _only_ on `RX6000` series cards; more may be supported. Please file an issue if finding incompatibility!
 
@@ -35,14 +44,3 @@ The Fedora base repositories provide the requirements with these packages:
  - `python3-textual`
 
 See [requirements.txt](requirements.txt) for other distributions
-
-## Screenshots
-
-Main screen:
-![Screenshot of main screen](screens/main.png "Main screen")
-
-Log screen:
-![Screenshot of log screen](screens/logging.png "Logging screen")
-This is logged:
-  - stat _names_ and their `sysfs` files; not values (yet?)
-  - toggling Dark/Light mode
