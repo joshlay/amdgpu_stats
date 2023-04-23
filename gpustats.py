@@ -220,9 +220,9 @@ class ClockDisplay(Static):
     def compose(self) -> ComposeResult:
         yield Horizontal(Label("[underline]Clocks"),
                          Label("", classes="statvalue"))
-        yield Horizontal(Label("  GPU Clock:",),
+        yield Horizontal(Label("  GPU core:",),
                          Label("", id="clk_core_val", classes="statvalue"))
-        yield Horizontal(Label("  Memory clock:"),
+        yield Horizontal(Label("  Memory:"),
                          Label("", id="clk_memory_val", classes="statvalue"))
         yield Horizontal(Label(""), Label("", classes="statvalue"))  # padding to split groups
         yield Horizontal(Label("[underline]Core"),
