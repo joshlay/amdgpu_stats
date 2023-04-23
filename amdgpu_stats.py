@@ -97,7 +97,7 @@ class GPUStats(App):
 
     # determine the real path of the script, to load the stylesheet
     SCRIPT_PATH = path.dirname(path.realpath(__file__))
-    CSS_PATH = path.join(SCRIPT_PATH, "gpustats.css")
+    CSS_PATH = path.join(SCRIPT_PATH, "amdgpu_stats.css")
 
     # initialize log screen
     SCREENS = {"logs": LogScreen()}
