@@ -70,7 +70,6 @@ for temp_node_label_file in temp_node_labels:
     temp_node_value_file = path.join(hwmon_dir, f"{temp_node_id}_input")
     with open(temp_node_label_file, 'r', encoding='utf-8') as _node:
         temp_node_name = _node.read().strip()
-    print(f'found temp: {temp_node_name} (id: {temp_node_id})')
     # add the node name/type and the corresponding temp file to the dict
     TEMP_FILES[temp_node_name] = temp_node_value_file
 
