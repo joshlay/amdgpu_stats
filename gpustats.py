@@ -151,12 +151,19 @@ class MiscDisplay(Static):
         self.timer_temp = None
 
     def compose(self) -> ComposeResult:
+        yield Horizontal(Label("[underline]Temperatures:"),
+                         Label("", classes="statvalue"))
         for temp_node in temp_files:
             # capitalize the first letter for display
             caption = temp_node[0].upper() + temp_node[1:]
-            yield Horizontal(Label(f'[bold]{caption}[/] temp:',), Label("", id="temp_" + temp_node, classes="statvalue"))
-        yield Horizontal(Label("[underline]Current[/] fan RPM:",), Label("", id="fan_rpm", classes="statvalue"))
-        yield Horizontal(Label("[underline]Target[/] fan RPM:",), Label("", id="fan_rpm_target", classes="statvalue"))
+            yield Horizontal(Label(f'[bold]  {caption}:[/]',),
+                             Label("", id="temp_" + temp_node, classes="statvalue"))
+        yield Horizontal(Label("[underline]Fan RPM:"),
+                         Label("", classes="statvalue"))
+        yield Horizontal(Label("[bold]  Current:[/]",),
+                         Label("", id="fan_rpm", classes="statvalue"))
+        yield Horizontal(Label("[bold]  Target:[/]",),
+                         Label("", id="fan_rpm_target", classes="statvalue"))
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
@@ -211,10 +218,16 @@ class ClockDisplay(Static):
         self.timer_clocks = None
 
     def compose(self) -> ComposeResult:
-        yield Horizontal(Label("Core clock:",), Label("", id="clk_core_val", classes="statvalue"))
-        yield Horizontal(Label("Utilization:",), Label("", id="util_pct", classes="statvalue"))
-        yield Horizontal(Label("Core voltage:",), Label("", id="clk_voltage_val", classes="statvalue"))
-        yield Horizontal(Label("Memory clock:"), Label("", id="clk_memory_val", classes="statvalue"))
+        yield Horizontal(Label("[underline]Core:"),
+                         Label("", classes="statvalue"))
+        yield Horizontal(Label("  GPU Clock:",),
+                         Label("", id="clk_core_val", classes="statvalue"))
+        yield Horizontal(Label("  Memory clock:"),
+                         Label("", id="clk_memory_val", classes="statvalue"))
+        yield Horizontal(Label("  Utilization:",),
+                         Label("", id="util_pct", classes="statvalue"))
+        yield Horizontal(Label("  Voltage:",),
+                         Label("", id="clk_voltage_val", classes="statvalue"))
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
@@ -256,13 +269,15 @@ class PowerDisplay(Static):
         self.timer_micro_watts = None
 
     def compose(self) -> ComposeResult:
-        yield Horizontal(Label("Power usage:",),
+        yield Horizontal(Label("[underline]Power:"),
+                         Label("", classes="statvalue"))
+        yield Horizontal(Label("  Usage:",),
                          Label("", id="pwr_avg_val", classes="statvalue"))
-        yield Horizontal(Label("Power limit:",),
+        yield Horizontal(Label("  [bold]Set[/] limit:",),
                          Label("", id="pwr_lim_val", classes="statvalue"))
-        yield Horizontal(Label("[underline]Default[/] limit:",),
+        yield Horizontal(Label("  [bold]Default[/] limit:",),
                          Label("", id="pwr_def_val", classes="statvalue"))
-        yield Horizontal(Label("Board capability:",),
+        yield Horizontal(Label("  Board capability:",),
                          Label("", id="pwr_cap_val", classes="statvalue"))
 
     def on_mount(self) -> None:
@@ -312,8 +327,8 @@ if __name__ == "__main__":
             default=1.0,
             help="The delay (in seconds) between polling for data",
             )
-    args = p.parse_args()
-    interval = args.interval
+    p_args = p.parse_args()
+    interval = p_args.interval
 #    CARD = args.card
 
     # detect AMD GPU, exit if unfound
