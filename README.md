@@ -43,4 +43,6 @@ Main screen:
 
 Log screen:
 ![Screenshot of log screen](screens/logging.png "Logging screen")
-Only the statistic files and toggling Dark/Light mode are logged; metrics will be added with a configurable interval.
+This is logged:
+  - stat _names_ and their `sysfs` files; not values (yet?)
+  - toggling Dark/Light mode
