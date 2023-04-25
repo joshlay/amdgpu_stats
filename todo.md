@@ -1,5 +1,6 @@
 ## TODO
 
+- add vram stats: used / total
 - add unit toggle/binding; `Ghz` can be fairly vague - users may prefer `Mhz`/`Hz`
     - tldr: may be wanted for precision
     - driver provides *hertz*, with modern cards is fairly excessive
