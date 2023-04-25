@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "amdgpu-stats"
-version = "0.1.2"
+version = "0.1.3"
 description = "A simple TUI (using Textual) that shows AMD GPU statistics"
 authors = ["Josh Lay <pypi@jlay.io>"]
 repository = "https://github.com/joshlay/amdgpu_stats"
@@ -13,7 +13,7 @@ textual = ">=0.10"
 humanfriendly = ">=10.0"
 
 [tool.poetry.scripts]
-amdgpu-stats = "amdgpu_stats.amdgpu_stats:main"
+amdgpu-stats = "amdgpu_stats.interface:tui"
 
 [build-system]
 requires = ["poetry-core"]
