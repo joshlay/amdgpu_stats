@@ -15,14 +15,16 @@ from typing import Tuple, Optional
 from humanfriendly import format_size
 
 
-# utility file -- funcs / constants, intended to provide library function
-# function to find the card / hwmon_dir -- assigned to vars, informs consts
 def find_card() -> Optional[Tuple[Optional[str], Optional[str]]]:
-    """searches contents of /sys/class/drm/card*/device/hwmon/hwmon*/name
+    """Searches contents of /sys/class/drm/card*/device/hwmon/hwmon*/name
 
-    looking for 'amdgpu' to find a card to monitor
+    ... looking for 'amdgpu' to find a card to monitor
 
-    returns the cardN name and hwmon directory for stats"""
+    Returns:
+        A tuple containing the 'cardN' name and hwmon directory for stats
+
+    If no AMD GPU found, this will be: (None, None)
+    """
     _card = None
     _hwmon_dir = None
     hwmon_names_glob = '/sys/class/drm/card*/device/hwmon/hwmon*/name'
@@ -38,25 +40,11 @@ def find_card() -> Optional[Tuple[Optional[str], Optional[str]]]:
     return _card, _hwmon_dir
 
 
-def read_stat(file: str) -> str:
-    """given `file`, return the contents"""
-    with open(file, "r", encoding="utf-8") as _fh:
-        data = _fh.read().strip()
-        return data
-
-
-def format_frequency(frequency_hz) -> str:
-    """takes a frequency and formats it with an appropriate Hz suffix"""
-    return (
-        format_size(int(frequency_hz), binary=False)
-        .replace("B", "Hz")
-        .replace("bytes", "Hz")
-    )
-
-
-# globals - card, hwmon directory, and statistic file paths derived from these
+# base vars: card identifier, hwmon directory for stats, then the stat dicts
 CARD, hwmon_dir = find_card()
 card_dir = path.join("/sys/class/drm/", CARD)  # eg: /sys/class/drm/card0/
+
+# dictionary of known source files
 # ref: https://docs.kernel.org/gpu/amdgpu/thermal.html
 SRC_FILES = {'pwr_limit': path.join(hwmon_dir, "power1_cap"),
              'pwr_average': path.join(hwmon_dir, "power1_average"),
@@ -70,8 +58,10 @@ SRC_FILES = {'pwr_limit': path.join(hwmon_dir, "power1_cap"),
              'fan_rpm': path.join(hwmon_dir, "fan1_input"),
              'fan_rpm_target': path.join(hwmon_dir, "fan1_target"),
              }
+
+# determine temperature nodes, construct a dict to store them
+# interface will iterate over these, creating labels as needed
 TEMP_FILES = {}
-# determine temperature nodes, construct an empty dict to store them
 temp_node_labels = glob.glob(path.join(hwmon_dir, "temp*_label"))
 for temp_node_label_file in temp_node_labels:
     # determine the base node id, eg: temp1
@@ -82,3 +72,96 @@ for temp_node_label_file in temp_node_labels:
         temp_node_name = _node.read().strip()
     # add the node name/type and the corresponding temp file to the dict
     TEMP_FILES[temp_node_name] = temp_node_value_file
+
+
+def read_stat(file: str) -> str:
+    """Given statistic file, `file`, return the contents"""
+    with open(file, "r", encoding="utf-8") as _fh:
+        data = _fh.read()
+        return data.strip()
+
+
+def format_frequency(frequency_hz: int) -> str:
+    """Takes a frequency (in Hz) and appends it with the appropriate suffix, ie:
+         - Hz
+         - MHz
+         - GHz"""
+    return (
+        format_size(frequency_hz, binary=False)
+        .replace("B", "Hz")
+        .replace("bytes", "Hz")
+    )
+
+
+def get_power_stats() -> dict:
+    """
+    Returns:
+        A dictionary of current GPU *power* related statistics.
+
+        {'limit': int,
+         'average': int,
+         'capability': int,
+         'default': int}
+    """
+    return {"limit": int(int(read_stat(SRC_FILES['pwr_limit'])) / 1000000),
+            "average": int(int(read_stat(SRC_FILES['pwr_average'])) / 1000000),
+            "capability": int(int(read_stat(SRC_FILES['pwr_cap'])) / 1000000), 
+            "default": int(int(read_stat(SRC_FILES['pwr_default'])) / 1000000)}    
+
+
+def get_core_stats() -> dict:
+    """
+    Returns:
+        A dictionary of current GPU *core/memory* related statistics.
+
+        {'sclk': int,
+         'mclk': int,
+         'voltage': float,
+         'util_pct': int}
+
+        Clocks are in Hz, `format_frequency` may be used to normalize
+    """
+    return {"sclk": int(read_stat(SRC_FILES['core_clock'])),
+            "mclk": int(read_stat(SRC_FILES['memory_clock'])),
+            "voltage": float(
+                f"{int(read_stat(SRC_FILES['core_voltage'])) / 1000:.2f}"
+            ),
+            "util_pct": int(read_stat(SRC_FILES['busy_pct']))}
+
+
+def get_fan_stats() -> dict:
+    """
+    Returns:
+        A dictionary of current GPU *fan* related statistics.
+
+        {'fan_rpm': int,
+         'fan_rpm_target': int}
+         """
+    return {"fan_rpm": int(read_stat(SRC_FILES['fan_rpm'])),
+            "fan_rpm_target": int(read_stat(SRC_FILES['fan_rpm_target']))}
+
+
+def get_temp_stats() -> dict:
+    """
+    Returns:
+        A dictionary of current GPU *temperature* related statistics.
+
+        Keys/values are dynamically contructed based on discovered nodes
+
+        {'name_temp_node_1': int,
+         'name_temp_node_2': int,
+         'name_temp_node_3': int}
+
+        Driver provides this in millidegrees C
+
+        Returned values are converted: (floor) divided by 1000 for *proper* C
+
+        As integers for comparison
+     """
+    temp_update = {}
+    for temp_node, temp_file in TEMP_FILES.items():
+        # iterate through the discovered temperature nodes
+        # ... updating the dictionary with new stats
+        _temperature = int(int(read_stat(temp_file)) // 1000)
+        temp_update[temp_node] = _temperature
+    return temp_update

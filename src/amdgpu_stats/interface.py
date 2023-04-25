@@ -23,7 +23,7 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Header, Footer, Static, TextLog, Label
 
-from .utils import CARD, SRC_FILES, TEMP_FILES, format_frequency, read_stat
+from .utils import CARD, SRC_FILES, TEMP_FILES, format_frequency, get_core_stats, get_fan_stats, get_power_stats, get_temp_stats
 
 
 class LogScreen(Screen):
@@ -120,8 +120,7 @@ class MiscDisplay(Static):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.timer_fan = None
-        self.timer_temp = None
+        self.timer_misc = None
 
     def compose(self) -> ComposeResult:
         yield Horizontal(Label("[underline]Temperatures"),
@@ -140,30 +139,14 @@ class MiscDisplay(Static):
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
-        self.timer_fan = self.set_interval(1, self.update_fan_stats)
-        self.timer_temp = self.set_interval(1, self.update_temp_stats)
+        self.timer_misc = self.set_interval(1, self.update_misc_stats)
 
-    def update_fan_stats(self) -> None:
-        """Method to update the 'fan' values to current measurements.
-
-        Run by a timer created 'on_mount'"""
-        val_update = {
-                "fan_rpm": read_stat(SRC_FILES['fan_rpm']),
-                "fan_rpm_target": read_stat(SRC_FILES['fan_rpm_target'])
-        }
-        self.fan_stats = val_update
-
-    def update_temp_stats(self) -> None:
-        """Method to update the 'temperature' values to current measurements.
+    def update_misc_stats(self) -> None:
+        """Method to update the temp/fan values to current measurements.
 
         Run by a timer created 'on_mount'"""
-        val_update = {}
-        for temp_node, temp_file in TEMP_FILES.items():
-            # iterate through the discovered temperature nodes
-            # ... updating the dictionary with new stats
-            _content = f'{int(read_stat(temp_file)) / 1000:.0f}C'
-            val_update[temp_node] = _content
-        self.temp_stats = val_update
+        self.fan_stats = get_fan_stats()
+        self.temp_stats = get_temp_stats()
 
     def watch_fan_stats(self, fan_stats: dict) -> None:
         """Called when the 'fan_stats' reactive attr changes.
@@ -179,7 +162,7 @@ class MiscDisplay(Static):
             # check first if the reactive object has been updated with keys
             if temp_node in temp_stats:
                 stat_dict_item = temp_stats[temp_node]
-                self.query_one("#temp_" + temp_node, Static).update(stat_dict_item)
+                self.query_one("#temp_" + temp_node, Static).update(f'{stat_dict_item}C')
 
 
 class ClockDisplay(Static):
@@ -212,28 +195,20 @@ class ClockDisplay(Static):
     def update_core_vals(self) -> None:
         """Method to update GPU clock values to the current measurements.
         Run by a timer created 'on_mount'"""
-
-        self.core_vals = {
-            "sclk": format_frequency(read_stat(SRC_FILES['core_clock'])),
-            "mclk": format_frequency(read_stat(SRC_FILES['memory_clock'])),
-            "voltage": float(
-                f"{int(read_stat(SRC_FILES['core_voltage'])) / 1000:.2f}"
-            ),
-            "util_pct": read_stat(SRC_FILES['busy_pct']),
-        }
+        self.core_vals = get_core_stats()
 
     def watch_core_vals(self, core_vals: dict) -> None:
         """Called when the clocks attribute changes
          - Updates label values
          - Casting inputs to string to avoid type problems w/ int/None"""
         self.query_one("#clk_core_val",
-                       Static).update(f"{core_vals['sclk']}")
+                       Static).update(f"{format_frequency(core_vals['sclk'])}")
         self.query_one("#util_pct",
                        Static).update(f"{core_vals['util_pct']}%")
         self.query_one("#clk_voltage_val",
                        Static).update(f"{core_vals['voltage']}V")
         self.query_one("#clk_memory_val",
-                       Static).update(f"{core_vals['mclk']}")
+                       Static).update(f"{format_frequency(core_vals['mclk'])}")
 
 
 class PowerDisplay(Static):
@@ -271,12 +246,7 @@ class PowerDisplay(Static):
         """Method to update GPU power values to current measurements.
 
         Run by a timer created 'on_mount'"""
-        self.micro_watts = {
-            "limit": int(int(read_stat(SRC_FILES['pwr_limit'])) / 1000000),
-            "average": int(int(read_stat(SRC_FILES['pwr_average'])) / 1000000),
-            "capability": int(int(read_stat(SRC_FILES['pwr_cap'])) / 1000000),
-            "default": int(int(read_stat(SRC_FILES['pwr_default'])) / 1000000),
-        }
+        self.micro_watts = get_power_stats()
 
     def watch_micro_watts(self, micro_watts: dict) -> None:
         """Called when the micro_watts attributes change.
