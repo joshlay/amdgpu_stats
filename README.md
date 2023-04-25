@@ -29,7 +29,7 @@ Once installed, run `amdgpu-stats` in your terminal of choice
 
 ## Module
 
-*Rudimentary* support as a module exists; functions / variables offered can be found in [utils.py](./src/amdgpu_stats/utils.py)
+*Rudimentary* support as a module exists; functions / variables offered can be found in `amdgpu_stats.utils`
 
 Of most interest:
  - The function `find_card` which returns a tuple; the discovered card and hwmon directory
@@ -49,3 +49,4 @@ In [3]: print(SRC_FILES)
 In [4]: print(TEMP_FILES)
 {'edge': '/sys/class/drm/card0/device/hwmon/hwmon9/temp1_input', 'junction': '/sys/class/drm/card0/device/hwmon/hwmon9/temp2_input', 'mem': '/sys/class/drm/card0/device/hwmon/hwmon9/temp3_input'}
 ```
+_Latest_ [Source file](https://github.com/joshlay/amdgpu_stats/blob/master/src/amdgpu_stats/utils.py)
