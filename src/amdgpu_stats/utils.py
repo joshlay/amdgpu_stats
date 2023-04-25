@@ -1,3 +1,14 @@
+"""
+utils.py
+
+This module contains utility functions/variables used throughout 'amdgpu-stats'
+
+Variables:
+    - CARD: the identifier for the discovered AMD GPU, ie: `card0` / `card1`
+    - hwmon_dir: the `hwmon` interface (dir) that provides stats for this card
+    - SRC_FILES: dictionary of the known stats from the items in `hwmon_dir`
+    - TEMP_FILES: dictionary of the *discovered* temperature nodes / stat files
+"""
 from os import path
 import glob
 from typing import Tuple, Optional

@@ -1,4 +1,19 @@
-from .utils import CARD, SRC_FILES, TEMP_FILES, format_frequency, read_stat
+"""
+interface.py
+
+This module provides the TUI aspect of 'amdgpu-stats'
+
+Classes:
+    - GPUStats: the object for the _Application_, instantiated at runtime
+    - GPUStatsWidget: the primary container for the three stat widgets:
+        - MiscDisplay
+        - ClockDisplay
+        - PowerDisplay
+    - LogScreen: Second screen with the logging widget, header, and footer
+
+Functions:
+    - tui: Renders the TUI using the classes above
+"""
 import sys
 
 from textual.binding import Binding
@@ -7,6 +22,8 @@ from textual.containers import Container, Horizontal
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Header, Footer, Static, TextLog, Label
+
+from .utils import CARD, SRC_FILES, TEMP_FILES, format_frequency, read_stat
 
 
 class LogScreen(Screen):
@@ -209,10 +226,14 @@ class ClockDisplay(Static):
         """Called when the clocks attribute changes
          - Updates label values
          - Casting inputs to string to avoid type problems w/ int/None"""
-        self.query_one("#clk_core_val", Static).update(f"{core_vals['sclk']}")
-        self.query_one("#util_pct", Static).update(f"{core_vals['util_pct']}%")
-        self.query_one("#clk_voltage_val", Static).update(f"{core_vals['voltage']}V")
-        self.query_one("#clk_memory_val", Static).update(f"{core_vals['mclk']}")
+        self.query_one("#clk_core_val",
+                       Static).update(f"{core_vals['sclk']}")
+        self.query_one("#util_pct",
+                       Static).update(f"{core_vals['util_pct']}%")
+        self.query_one("#clk_voltage_val",
+                       Static).update(f"{core_vals['voltage']}V")
+        self.query_one("#clk_memory_val",
+                       Static).update(f"{core_vals['mclk']}")
 
 
 class PowerDisplay(Static):
@@ -261,10 +282,14 @@ class PowerDisplay(Static):
         """Called when the micro_watts attributes change.
          - Updates label values
          - Casting inputs to string to avoid type problems w/ int/None"""
-        self.query_one("#pwr_avg_val", Static).update(f"{micro_watts['average']}W")
-        self.query_one("#pwr_lim_val", Static).update(f"{micro_watts['limit']}W")
-        self.query_one("#pwr_def_val", Static).update(f"{micro_watts['default']}W")
-        self.query_one("#pwr_cap_val", Static).update(f"{micro_watts['capability']}W")
+        self.query_one("#pwr_avg_val",
+                       Static).update(f"{micro_watts['average']}W")
+        self.query_one("#pwr_lim_val",
+                       Static).update(f"{micro_watts['limit']}W")
+        self.query_one("#pwr_def_val",
+                       Static).update(f"{micro_watts['default']}W")
+        self.query_one("#pwr_cap_val",
+                       Static).update(f"{micro_watts['capability']}W")
 
 
 def tui() -> None:
