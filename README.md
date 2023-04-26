@@ -1,6 +1,6 @@
 # amdgpu_stats
 
-Simple TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GPU statistics
+A simple Python module/TUI _(using [Textual](https://textual.textualize.io/))_ that shows AMD GPU statistics
 
 ![Screenshot of main screen](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/main.png "Main screen")
 
