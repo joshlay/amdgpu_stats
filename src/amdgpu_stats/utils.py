@@ -1,17 +1,19 @@
 """
 utils.py
 
-This module contains utility functions/variables used throughout 'amdgpu-stats'
+This module contains utility functions/variables used throughout the 'amdgpu-stats' TUI
 
 Variables:
     - CARD: the identifier for the discovered AMD GPU, ie: `card0` / `card1`
     - hwmon_dir: the `hwmon` interface (dir) that provides stats for this card
     - SRC_FILES: dictionary of the known stats from the items in `hwmon_dir`
     - TEMP_FILES: dictionary of the *discovered* temperature nodes / stat files
+    - POWER_DOMAINS: tuple of supported power domains: `average`, `limit`, `cap`, and `default`
+    - CLOCK_DOMAINS: tuple of supported clock domains: `core`, `memory`
 """
 from os import path
 import glob
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Union
 from humanfriendly import format_size
 
 
@@ -20,10 +22,10 @@ def find_card() -> Optional[Tuple[Optional[str], Optional[str]]]:
 
     ... looking for 'amdgpu' to find a card to monitor
 
-    Returns:
-        A tuple containing the 'cardN' name and hwmon directory for stats
-
     If no AMD GPU found, this will be: (None, None)
+
+    Returns:
+        tuple: ('cardN', '/hwmon/directory/with/stat/files')
     """
     _card = None
     _hwmon_dir = None
@@ -75,17 +77,22 @@ for temp_node_label_file in temp_node_labels:
 
 
 def read_stat(file: str) -> str:
-    """Given statistic file, `file`, return the contents"""
+    """Read statistic `file`, return the stripped contents
+
+    Returns:
+        str: Statistics from `file`"""
     with open(file, "r", encoding="utf-8") as _fh:
         data = _fh.read()
         return data.strip()
 
 
 def format_frequency(frequency_hz: int) -> str:
-    """Takes a frequency (in Hz) and appends it with the appropriate suffix, ie:
-         - Hz
-         - MHz
-         - GHz"""
+    """
+    Takes a frequency (in Hz) and normalizes it: `Hz`, `MHz`, or `GHz`
+
+    Returns:
+        str: frequency string with the appropriate suffix applied
+    """
     return (
         format_size(frequency_hz, binary=False)
         .replace("B", "Hz")
@@ -96,67 +103,142 @@ def format_frequency(frequency_hz: int) -> str:
 def get_power_stats() -> dict:
     """
     Returns:
-        A dictionary of current GPU *power* related statistics.
+        dict: A dictionary of current GPU *power* related statistics.
 
-        {'limit': int,
-         'average': int,
-         'capability': int,
-         'default': int}
+        Example:
+            `{'limit': int, 'average': int, 'capability': int, 'default': int}`
     """
-    return {"limit": int(int(read_stat(SRC_FILES['pwr_limit'])) / 1000000),
-            "average": int(int(read_stat(SRC_FILES['pwr_average'])) / 1000000),
-            "capability": int(int(read_stat(SRC_FILES['pwr_cap'])) / 1000000), 
-            "default": int(int(read_stat(SRC_FILES['pwr_default'])) / 1000000)}    
+    return {"limit": get_gpu_power('limit'),
+            "average": get_gpu_power('average'),
+            "capability": get_gpu_power('cap'),
+            "default": get_gpu_power('default')}
+
+
+# constant; supported power domains by 'get_gpu_power' func
+# is concatenated with 'pwr_' to index SRC_FILES for the relevant data file
+POWER_DOMAINS = ('limit', 'average', 'cap', 'default')
+# defined outside/globally for efficiency -- it's called a lot in the TUI
+
+
+def get_gpu_power(domain: str) -> int:
+    """
+    Args:
+        domain (str): The GPU domain of interest regarding power
+
+                      Must be one of POWER_DOMAINS:
+                       - limit: the effective limit placed on the card
+                       - default: the default limit
+                       - average: the average consumption
+                       - cap: the board capability
+
+    Returns:
+        int: The requested GPU power statistic by domain, in Watts
+    """
+    if domain not in POWER_DOMAINS:
+        raise ValueError(f"Invalid power domain: '{domain}'. Must be one of: {POWER_DOMAINS}")
+    return int(int(read_stat(SRC_FILES['pwr_' + domain])) / 1000000)
 
 
 def get_core_stats() -> dict:
     """
     Returns:
-        A dictionary of current GPU *core/memory* related statistics.
+        dict: A dictionary of current GPU *core/memory* related statistics.
 
-        {'sclk': int,
-         'mclk': int,
-         'voltage': float,
-         'util_pct': int}
+        Clocks are in Hz, the `format_frequency` function may be used to normalize
 
-        Clocks are in Hz, `format_frequency` may be used to normalize
+        Example:
+            `{'sclk': int, 'mclk': int, 'voltage': float, 'util_pct': int}`
     """
-    return {"sclk": int(read_stat(SRC_FILES['core_clock'])),
-            "mclk": int(read_stat(SRC_FILES['memory_clock'])),
-            "voltage": float(
-                f"{int(read_stat(SRC_FILES['core_voltage'])) / 1000:.2f}"
-            ),
-            "util_pct": int(read_stat(SRC_FILES['busy_pct']))}
+    return {"sclk": get_clock('core'),
+            "mclk": get_clock('memory'),
+            "voltage": get_voltage(),
+            "util_pct": get_gpu_usage()}
+
+
+# constant; supported clock domains by 'get_clock' func
+# is concatenated with 'clock_' to index SRC_FILES for the relevant data file
+CLOCK_DOMAINS = ('core', 'memory')
+# defined outside/globally for efficiency -- it's called a lot in the TUI
+
+
+def get_clock(domain: str, format_freq: bool = False) -> Union[int, str]:
+    """
+    Args:
+        domain (str): The GPU domain of interest regarding clock speed.
+            Must be one of CLOCK_DOMAINS
+
+        format_freq (bool, optional): If True, a formatted string will be returned instead of an int.
+            Defaults to False.
+
+    Returns:
+        Union[int, str]: The clock value for the specified domain.
+                         If format_freq is True, a formatted string with Hz/MHz/GHz
+                         will be returned instead of an int
+    """
+    if domain not in CLOCK_DOMAINS:
+        raise ValueError(f"Invalid clock domain: '{domain}'. Must be one of: {CLOCK_DOMAINS}")
+    if format_freq:
+        return format_frequency(read_stat(SRC_FILES[domain + '_clock']))
+    return int(read_stat(SRC_FILES[domain + '_clock']))
+
+
+def get_voltage() -> float:
+    """
+    Returns:
+        float: The current GPU core voltage
+    """
+    return round(int(read_stat(SRC_FILES['core_voltage'])) / 1000.0, 2)
 
 
 def get_fan_stats() -> dict:
     """
     Returns:
-        A dictionary of current GPU *fan* related statistics.
+        dict: A dictionary of current GPU *fan* related statistics.
 
-        {'fan_rpm': int,
-         'fan_rpm_target': int}
-         """
-    return {"fan_rpm": int(read_stat(SRC_FILES['fan_rpm'])),
-            "fan_rpm_target": int(read_stat(SRC_FILES['fan_rpm_target']))}
+        Example:
+            `{'fan_rpm': int, 'fan_rpm_target': int}`
+    """
+    return {"fan_rpm": get_fan_rpm(),
+            "fan_rpm_target": get_fan_target()}
+
+
+def get_fan_rpm() -> int:
+    """
+    Returns:
+        int: The current fan RPM
+    """
+    return int(read_stat(SRC_FILES['fan_rpm']))
+
+
+def get_fan_target() -> int:
+    """
+    Returns:
+        int: The current fan RPM
+    """
+    return int(read_stat(SRC_FILES['fan_rpm_target']))
+
+
+def get_gpu_usage() -> int:
+    """
+    Returns:
+        int: The current GPU usage/utilization as a percentage
+    """
+    return int(read_stat(SRC_FILES['busy_pct']))
 
 
 def get_temp_stats() -> dict:
     """
     Returns:
-        A dictionary of current GPU *temperature* related statistics.
+        dict: A dictionary of current GPU *temperature* related statistics.
 
-        Keys/values are dynamically contructed based on discovered nodes
+        Example:
+            `{'name_temp_node_1': int, 'name_temp_node_2': int, 'name_temp_node_3': int}`
 
-        {'name_temp_node_1': int,
-         'name_temp_node_2': int,
-         'name_temp_node_3': int}
+        Dictionary keys (temp nodes) are dynamically contructed through discovery.
 
-        Driver provides this in millidegrees C
+        Driver provides temperatures in *millidegrees* C
 
-        Returned values are converted: (floor) divided by 1000 for *proper* C
-
-        As integers for comparison
+        Returned values are converted to C, as integers for simple comparison
      """
     temp_update = {}
     for temp_node, temp_file in TEMP_FILES.items():
