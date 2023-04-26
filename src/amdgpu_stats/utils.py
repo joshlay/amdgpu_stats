@@ -46,36 +46,37 @@ def find_card() -> Optional[Tuple[Optional[str], Optional[str]]]:
 
 # base vars: card identifier, hwmon directory for stats, then the stat dicts
 CARD, hwmon_dir = find_card()
-card_dir = path.join("/sys/class/drm/", CARD)  # eg: /sys/class/drm/card0/
+if CARD is not None:
+    card_dir = path.join("/sys/class/drm/", CARD)  # eg: /sys/class/drm/card0/
 
-# dictionary of known source files
-# ref: https://docs.kernel.org/gpu/amdgpu/thermal.html
-SRC_FILES = {'pwr_limit': path.join(hwmon_dir, "power1_cap"),
-             'pwr_average': path.join(hwmon_dir, "power1_average"),
-             'pwr_cap': path.join(hwmon_dir, "power1_cap_max"),
-             'pwr_default': path.join(hwmon_dir, "power1_cap_default"),
-             'core_clock': path.join(hwmon_dir, "freq1_input"),
-             'core_voltage': path.join(hwmon_dir, "in0_input"),
-             'memory_clock': path.join(hwmon_dir, "freq2_input"),
-             'busy_pct': path.join(card_dir, "device/gpu_busy_percent"),
-             'temp_c': path.join(hwmon_dir, "temp1_input"),
-             'fan_rpm': path.join(hwmon_dir, "fan1_input"),
-             'fan_rpm_target': path.join(hwmon_dir, "fan1_target"),
-             }
+    # dictionary of known source files
+    # ref: https://docs.kernel.org/gpu/amdgpu/thermal.html
+    SRC_FILES = {'pwr_limit': path.join(hwmon_dir, "power1_cap"),
+                 'pwr_average': path.join(hwmon_dir, "power1_average"),
+                 'pwr_cap': path.join(hwmon_dir, "power1_cap_max"),
+                 'pwr_default': path.join(hwmon_dir, "power1_cap_default"),
+                 'core_clock': path.join(hwmon_dir, "freq1_input"),
+                 'core_voltage': path.join(hwmon_dir, "in0_input"),
+                 'memory_clock': path.join(hwmon_dir, "freq2_input"),
+                 'busy_pct': path.join(card_dir, "device/gpu_busy_percent"),
+                 'temp_c': path.join(hwmon_dir, "temp1_input"),
+                 'fan_rpm': path.join(hwmon_dir, "fan1_input"),
+                 'fan_rpm_target': path.join(hwmon_dir, "fan1_target"),
+                 }
 
-# determine temperature nodes, construct a dict to store them
-# interface will iterate over these, creating labels as needed
-TEMP_FILES = {}
-temp_node_labels = glob.glob(path.join(hwmon_dir, "temp*_label"))
-for temp_node_label_file in temp_node_labels:
-    # determine the base node id, eg: temp1
-    # construct the path to the file that will label it. ie: edge/junction
-    temp_node_id = path.basename(temp_node_label_file).split('_')[0]
-    temp_node_value_file = path.join(hwmon_dir, f"{temp_node_id}_input")
-    with open(temp_node_label_file, 'r', encoding='utf-8') as _node:
-        temp_node_name = _node.read().strip()
-    # add the node name/type and the corresponding temp file to the dict
-    TEMP_FILES[temp_node_name] = temp_node_value_file
+    # determine temperature nodes, construct a dict to store them
+    # interface will iterate over these, creating labels as needed
+    TEMP_FILES = {}
+    temp_node_labels = glob.glob(path.join(hwmon_dir, "temp*_label"))
+    for temp_node_label_file in temp_node_labels:
+        # determine the base node id, eg: temp1
+        # construct the path to the file that will label it. ie: edge/junction
+        temp_node_id = path.basename(temp_node_label_file).split('_')[0]
+        temp_node_value_file = path.join(hwmon_dir, f"{temp_node_id}_input")
+        with open(temp_node_label_file, 'r', encoding='utf-8') as _node:
+            temp_node_name = _node.read().strip()
+        # add the node name/type and the corresponding temp file to the dict
+        TEMP_FILES[temp_node_name] = temp_node_value_file
 
 
 def read_stat(file: str) -> str:
