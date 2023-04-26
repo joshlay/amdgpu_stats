@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "amdgpu-stats"
-version = "0.1.5"
-description = "A simple TUI (using Textual) that shows AMD GPU statistics"
+version = "0.1.6"
+description = "A simple module/TUI (using Textual) that provides AMD GPU statistics"
 authors = ["Josh Lay <pypi@jlay.io>"]
 repository = "https://github.com/joshlay/amdgpu_stats"
 license = "MIT"
