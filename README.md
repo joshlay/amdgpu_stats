@@ -47,4 +47,9 @@ In [4]: print(amdgpu_stats.utils.get_temp_stats())
 In [5]: print(amdgpu_stats.utils.get_fan_stats())
 {'fan_rpm': 0, 'fan_rpm_target': 0}
 ```
-See `help('amdgpu_stats.utils')` or [the module source](https://github.com/joshlay/amdgpu_stats/blob/master/src/amdgpu_stats/utils.py) for more info
+## Documentation
+
+For more information on the module, see:
+ - `help('amdgpu_stats.utils')` in your interpreter
+ - [ReadTheDocs](https://amdgpu-stats.readthedocs.io/en/latest/)
+ - [the module source](https://github.com/joshlay/amdgpu_stats/blob/master/src/amdgpu_stats/utils.py) for more info
