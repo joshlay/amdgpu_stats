@@ -11,6 +11,8 @@ Variables:
     - POWER_DOMAINS: tuple of supported power domains: `average`, `limit`, `cap`, and `default`
     - CLOCK_DOMAINS: tuple of supported clock domains: `core`, `memory`
 """
+# disable superfluous linting
+# pylint: disable=line-too-long
 from os import path
 import glob
 from typing import Tuple, Optional, Union
