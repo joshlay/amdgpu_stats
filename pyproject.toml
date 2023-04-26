@@ -11,6 +11,10 @@ readme = "README.md"
 python = "^3.9"
 textual = ">=0.10"
 humanfriendly = ">=10.0"
+sphinx = "^6.2"
+
+[tool.poetry.dev-dependencies]
+sphinx-rtd-theme = ">=1.0.0"
 
 [tool.poetry.scripts]
 amdgpu-stats = "amdgpu_stats.interface:tui"
