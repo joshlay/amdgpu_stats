@@ -23,7 +23,13 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Header, Footer, Static, TextLog, Label
 
-from .utils import CARD, SRC_FILES, TEMP_FILES, format_frequency, get_core_stats, get_fan_stats, get_power_stats, get_temp_stats  # pylint: disable=line-too-long
+from .utils import AMDGPU_CARDS, format_frequency, get_core_stats, get_fan_rpm, get_fan_target, get_power_stats, get_temp_stats  # pylint: disable=line-too-long
+
+# globals - card handling / choice for TUI
+if len(AMDGPU_CARDS) > 0:
+    # default to showing stats for the first detected card
+    CARD = next(iter(AMDGPU_CARDS))
+    hwmon_dir = AMDGPU_CARDS[CARD]
 
 
 class LogScreen(Screen):
@@ -79,17 +85,18 @@ class GPUStats(App):
         yield Header()
         yield Container(GPUStatsWidget())
         self.update_log("[bold green]App started, logging begin!")
-        self.update_log("[bold italic]Information sources:[/]")
-        for metric, source in SRC_FILES.items():
-            self.update_log(f'[bold]  {metric}:[/] {source}')
-        for metric, source in TEMP_FILES.items():
-            self.update_log(f'[bold]  {metric} temperature:[/] {source}')
+        self.update_log(f"[bold italic]Information source:[/] {hwmon_dir}")
+        # TODO: account for not storing these in dicts, but resolved in funcs
+        # for metric, source in SRC_FILES.items():
+        #    self.update_log(f'[bold]  {metric}:[/] {source}')
+        # for metric, source in TEMP_FILES.items():
+        #    self.update_log(f'[bold]  {metric} temperature:[/] {source}')
         yield Footer()
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.dark = not self.dark
-        self.update_log(f"Dark side: [bold]{self.dark}")
+        self.update_log(f"[bold]Dark side: [italic]{self.dark}")
 
     def action_quit_app(self) -> None:
         """An action to quit the program"""
@@ -114,28 +121,39 @@ class MiscDisplay(Static):
     """A widget to display misc. GPU stats."""
     # construct the misc. stats dict; appended by discovered temperature nodes
     # used to make a 'reactive' object
-    fan_stats = reactive({"fan_rpm": 0,
-                          "fan_rpm_target": 0})
+    fan_rpm = reactive(0)
+    fan_rpm_target = reactive(0)
+    # do some dancing to craft the UI; initialize the reactive obj with data
+    # to get proper labels
+    initial_stats = get_temp_stats(CARD)
+    # dynamic object for temperature updates
     temp_stats = reactive({})
+    # default to 'not composed', once labels are made - become true
+    # avoids a race condition between discovering temperature nodes/stats
+    # ... and making labels for them
+    composed = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.timer_misc = None
+        self.temp_stats = get_temp_stats(CARD)
 
     def compose(self) -> ComposeResult:
         yield Horizontal(Label("[underline]Temperatures"),
                          Label("", classes="statvalue"))
-        for temp_node in TEMP_FILES:
+        for temp_node in self.initial_stats:
             # capitalize the first letter for display
             caption = temp_node[0].upper() + temp_node[1:]
             yield Horizontal(Label(f'  {caption}:',),
-                             Label("", id="temp_" + temp_node, classes="statvalue"))
+                             Label("", id="temp_" + temp_node,
+                                   classes="statvalue"))
         yield Horizontal(Label("[underline]Fan RPM"),
                          Label("", classes="statvalue"))
         yield Horizontal(Label("  Current:",),
                          Label("", id="fan_rpm", classes="statvalue"))
         yield Horizontal(Label("  Target:",),
                          Label("", id="fan_rpm_target", classes="statvalue"))
+        self.composed = True
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
@@ -145,24 +163,32 @@ class MiscDisplay(Static):
         """Method to update the temp/fan values to current measurements.
 
         Run by a timer created 'on_mount'"""
-        self.fan_stats = get_fan_stats()
-        self.temp_stats = get_temp_stats()
+        self.fan_rpm = get_fan_rpm(CARD)
+        self.fan_rpm_target = get_fan_target(CARD)
+        self.temp_stats = get_temp_stats(CARD)
 
-    def watch_fan_stats(self, fan_stats: dict) -> None:
-        """Called when the 'fan_stats' reactive attr changes.
+    def watch_fan_rpm(self, fan_rpm: int) -> None:
+        """Called when the 'fan_rpm' reactive attr changes.
 
          - Updates label values
          - Casting inputs to string to avoid type problems w/ int/None"""
-        self.query_one("#fan_rpm", Static).update(f"{fan_stats['fan_rpm']}")
-        self.query_one("#fan_rpm_target", Static).update(f"{fan_stats['fan_rpm_target']}")
+        self.query_one("#fan_rpm", Static).update(f"{fan_rpm}")
+
+    def watch_fan_rpm_target(self, fan_rpm_target: int) -> None:
+        """Called when the 'fan_rpm_target' reactive attr changes.
+
+         - Updates label values
+         - Casting inputs to string to avoid type problems w/ int/None"""
+        self.query_one("#fan_rpm_target", Static).update(f"{fan_rpm_target}")
 
     def watch_temp_stats(self, temp_stats: dict) -> None:
         """Called when the temp_stats reactive attr changes, updates labels"""
-        for temp_node in TEMP_FILES:
-            # check first if the reactive object has been updated with keys
-            if temp_node in temp_stats:
-                stat_dict_item = temp_stats[temp_node]
-                self.query_one("#temp_" + temp_node, Static).update(f'{stat_dict_item}C')
+        # try to avoid racing
+        if not self.composed:
+            return
+        for temp_node in temp_stats:
+            item_val = self.temp_stats[temp_node]
+            self.query_one("#temp_" + temp_node, Static).update(f'{item_val}C')
 
 
 class ClockDisplay(Static):
@@ -180,7 +206,8 @@ class ClockDisplay(Static):
                          Label("", id="clk_core_val", classes="statvalue"))
         yield Horizontal(Label("  Memory:"),
                          Label("", id="clk_memory_val", classes="statvalue"))
-        yield Horizontal(Label(""), Label("", classes="statvalue"))  # padding to split groups
+        # padding to split groups
+        yield Horizontal(Label(""), Label("", classes="statvalue"))
         yield Horizontal(Label("[underline]Core"),
                          Label("", classes="statvalue"))
         yield Horizontal(Label("  Utilization:",),
@@ -195,7 +222,7 @@ class ClockDisplay(Static):
     def update_core_vals(self) -> None:
         """Method to update GPU clock values to the current measurements.
         Run by a timer created 'on_mount'"""
-        self.core_vals = get_core_stats()
+        self.core_vals = get_core_stats(CARD)
 
     def watch_core_vals(self, core_vals: dict) -> None:
         """Called when the clocks attribute changes
@@ -214,21 +241,22 @@ class ClockDisplay(Static):
 class PowerDisplay(Static):
     """A widget to display GPU power stats."""
 
-    micro_watts = reactive({"limit": 0,
-                            "average": 0,
-                            "capability": 0,
-                            "default": 0})
+    watts = reactive({"limit": 0,
+                      "average": 0,
+                      "capability": 0,
+                      "default": 0})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.timer_micro_watts = None
+        self.timer_watts = None
 
     def compose(self) -> ComposeResult:
         yield Horizontal(Label("[underline]Power"),
                          Label("", classes="statvalue"))
         yield Horizontal(Label("  Usage:",),
                          Label("", id="pwr_avg_val", classes="statvalue"))
-        yield Horizontal(Label(""), Label("", classes="statvalue"))  # padding to split groups
+        # padding to split groups
+        yield Horizontal(Label(""), Label("", classes="statvalue"))
         yield Horizontal(Label("[underline]Limits"),
                          Label("", classes="statvalue"))
         yield Horizontal(Label("  Configured:",),
@@ -240,31 +268,32 @@ class PowerDisplay(Static):
 
     def on_mount(self) -> None:
         """Event handler called when widget is added to the app."""
-        self.timer_micro_watts = self.set_interval(1, self.update_micro_watts)
+        self.timer_watts = self.set_interval(1, self.update_watts)
 
-    def update_micro_watts(self) -> None:
+    def update_watts(self) -> None:
         """Method to update GPU power values to current measurements.
 
         Run by a timer created 'on_mount'"""
-        self.micro_watts = get_power_stats()
+        self.watts = get_power_stats(CARD)
 
-    def watch_micro_watts(self, micro_watts: dict) -> None:
-        """Called when the micro_watts attributes change.
+    def watch_watts(self, watts: dict) -> None:
+        """Called when the 'watts' reactive attribute (var) changes.
          - Updates label values
          - Casting inputs to string to avoid type problems w/ int/None"""
         self.query_one("#pwr_avg_val",
-                       Static).update(f"{micro_watts['average']}W")
+                       Static).update(f"{watts['average']}W")
         self.query_one("#pwr_lim_val",
-                       Static).update(f"{micro_watts['limit']}W")
+                       Static).update(f"{watts['limit']}W")
         self.query_one("#pwr_def_val",
-                       Static).update(f"{micro_watts['default']}W")
+                       Static).update(f"{watts['default']}W")
         self.query_one("#pwr_cap_val",
-                       Static).update(f"{micro_watts['capability']}W")
+                       Static).update(f"{watts['capability']}W")
 
 
 def tui() -> None:
     '''Spawns the textual UI only during CLI invocation / after argparse'''
-    if CARD is None:
+    if len(AMDGPU_CARDS) > 0:
+        app = GPUStats()
+        app.run()
+    else:
         sys.exit('Could not find an AMD GPU, exiting.')
-    app = GPUStats()
-    app.run()
