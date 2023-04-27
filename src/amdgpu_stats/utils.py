@@ -18,7 +18,8 @@ from humanfriendly import format_size
 
 
 def find_cards() -> dict:
-    """Searches contents of `/sys/class/drm/card*/device/hwmon/hwmon*/name`
+    """
+    Searches contents of `/sys/class/drm/card*/device/hwmon/hwmon*/name`
 
     Reads 'hwmon' names looking for 'amdgpu' to find cards to monitor.
 
@@ -51,7 +52,8 @@ CLOCK_DOMAINS = ('core', 'memory')
 
 
 def read_stat(file: str, stat_type: Optional[str] = None) -> str:
-    """Read statistic `file`, return the stripped contents
+    """
+    Read statistic `file`, return the stripped contents
 
     Args:
         file (str): The statistic file to read/return
@@ -59,7 +61,8 @@ def read_stat(file: str, stat_type: Optional[str] = None) -> str:
         stat_type (str): Optional type, if specified - can convert data.
 
     Returns:
-        str: Statistics from `file`. If `stat_type='power'`, will convert mW to Watts"""
+        str: Statistics from `file`. If `stat_type='power'`, will convert mW to Watts
+    """
     with open(file, "r", encoding="utf-8") as _fh:
         data = _fh.read().strip()
         if stat_type == 'power':
@@ -189,7 +192,7 @@ def get_fan_rpm(card: str) -> int:
         card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
 
     Returns:
-        int: The current fan RPM
+        int: The *current* fan RPM
     """
     # verify card -- is it AMD, do we know the hwmon directory?
     if card in AMDGPU_CARDS:
@@ -207,7 +210,7 @@ def get_fan_target(card: str) -> int:
         card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
 
     Returns:
-        int: The current fan RPM
+        int: The *target* fan RPM
     """
     # verify card -- is it AMD, do we know the hwmon directory?
     if card in AMDGPU_CARDS:
@@ -242,7 +245,7 @@ def get_temp_stats(card: str) -> dict:
         card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
 
     Returns:
-        dict: A dictionary of current GPU *temperature* related statistics.
+        dict: A dictionary of current GPU *temperature* related statistics
 
         Example:
             `{'name_temp_node_1': int, 'name_temp_node_2': int, 'name_temp_node_3': int}`
