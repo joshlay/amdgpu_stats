@@ -4,11 +4,9 @@ A simple Python module/TUI _(using [Textual](https://textual.textualize.io/))_ t
 
 ![Screenshot of main screen](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/main.png "Main screen")
 
-![Screenshot of log screen](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/logging.png "Logging screen")
-
 The GPU and temperature nodes (`edge`/`junction`/etc.) are discovered automatically.
 
-Statistics are not logged; only toggling Dark/light mode and the stat names / source files.
+Please see [the module section](#module) or [the docs](https://amdgpu-stats.readthedocs.io/en/latest/) for information on usage as an `import` in other tooling
 
 Tested _only_ on `RX6000` series cards; APUs and more _may_ be supported. Please file an issue if finding incompatibility!
 
@@ -35,18 +33,17 @@ Demonstration:
 ```
 In [1]: import amdgpu_stats.utils
 
-In [2]: print(amdgpu_stats.utils.get_core_stats())
-{'sclk': 0, 'mclk': 1000000000, 'voltage': 0.01, 'util_pct': 0}
+In [2]: amdgpu_stats.utils.AMDGPU_CARDS
+Out[2]: {'card0': '/sys/class/drm/card0/device/hwmon/hwmon9'}
 
-In [3]: print(amdgpu_stats.utils.get_power_stats())
-{'limit': 281, 'average': 35, 'capability': 323, 'default': 281}
+In [3]: amdgpu_stats.utils.get_core_stats('card0')
+Out[3]: {'sclk': 640000000, 'mclk': 1000000000, 'voltage': 0.79, 'util_pct': 65}
 
-In [4]: print(amdgpu_stats.utils.get_temp_stats())
-{'edge': 33, 'junction': 36, 'mem': 42}
-
-In [5]: print(amdgpu_stats.utils.get_fan_stats())
-{'fan_rpm': 0, 'fan_rpm_target': 0}
+In [4]: amdgpu_stats.utils.get_clock('card0', 'core', format_freq=True)
+Out[4]: '659 MHz' 
 ```
+Feature requests [are encouraged](https://github.com/joshlay/amdgpu_stats/issues) :)
+
 ## Documentation
 
 For more information on the module, see:
