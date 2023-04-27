@@ -4,11 +4,10 @@ utils.py
 This module contains utility functions/variables used throughout the 'amdgpu-stats' TUI
 
 Variables:
-    - CARD: the identifier for the discovered AMD GPU, ie: `card0` / `card1`
-    - hwmon_dir: the `hwmon` interface (dir) that provides stats for this card
-    - SRC_FILES: dictionary of the known stats from the items in `hwmon_dir`
-    - TEMP_FILES: dictionary of the *discovered* temperature nodes / stat files
-    - CLOCK_DOMAINS: tuple of supported clock domains: `core`, `memory`
+    - AMDGPU_CARDS (dict): discovered AMD GPUs and their `hwmon` stats directories
+        - Example: `{'card0': '/sys/class/drm/card0/device/hwmon/hwmon9'}`
+        - If no *AMD* cards are found, this will be empty.
+    - CLOCK_DOMAINS: tuple of supported clock domains: `('core', 'memory')`
 """
 # disable superfluous linting
 # pylint: disable=line-too-long
