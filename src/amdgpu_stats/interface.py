@@ -86,7 +86,7 @@ class GPUStats(App):
         yield Container(GPUStatsWidget())
         self.update_log("[bold green]App started, logging begin!")
         self.update_log(f"[bold italic]Information source:[/] {hwmon_dir}")
-        # TODO: account for not storing these in dicts, but resolved in funcs
+        # nice-to-have: account for not storing these in dicts, but resolved in funcs
         # for metric, source in SRC_FILES.items():
         #    self.update_log(f'[bold]  {metric}:[/] {source}')
         # for metric, source in TEMP_FILES.items():
