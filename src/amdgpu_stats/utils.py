@@ -51,6 +51,37 @@ CLOCK_DOMAINS = ('core', 'memory')
 # defined outside/globally for efficiency -- it's called a lot in the TUI
 
 
+def validate_card(card: Optional[str] = None) -> str:
+    """
+    Checks the provided `card` identifier -- if present in `AMDGPU_CARDS`
+
+    If `card` is not provided, will yield the first AMD GPU *(if any installed)*
+
+    Args:
+        card (str, optional): Card identifier from `/dev/dri/`, ie: `card0`.
+
+    Raises:
+        ValueError: If *no* AMD cards are found, or `card` is not one of them.
+            Determined with `AMDGPU_CARDS`
+
+    Returns:
+        str: Validated card identifier. 
+            If `card` is provided and valid: original identifier `card` is returned
+            If `card` is omitted: the first AMD GPU identifier is returned
+    """
+    if card in AMDGPU_CARDS:
+        # card was provided and checks out, send it back
+        return card
+    if card is None:
+        # if no card provided and we know some, send the first one we know back
+        if len(AMDGPU_CARDS) > 0:
+            return list(AMDGPU_CARDS.keys())[0]
+        # if no AMD cards found, toss an errror
+        raise ValueError("No AMD GPUs or hwmon directories found")
+    # if 'card' was specified (not None) but invalid (not in 'AMDGPU_CARDS'), raise a helpful error
+    raise ValueError(f"Invalid card: '{card}'. Must be one of: {list(AMDGPU_CARDS.keys())}")
+
+
 def read_stat(file: str, stat_type: Optional[str] = None) -> str:
     """
     Read statistic `file`, return the stripped contents
@@ -84,10 +115,14 @@ def format_frequency(frequency_hz: int) -> str:
     )
 
 
-def get_power_stats(card: str) -> dict:
+def get_power_stats(card: Optional[str] = None) -> dict:
     """
     Args:
-        card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+        card (str, optional): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+
+    Raises:
+        ValueError: If *no* AMD cards are found, or `card` is not one of them.
+            Determined with `AMDGPU_CARDS`
 
     Returns:
         dict: A dictionary of current GPU *power* related statistics.
@@ -95,12 +130,8 @@ def get_power_stats(card: str) -> dict:
         Example:
             `{'limit': int, 'average': int, 'capability': int, 'default': int}`
     """
-    if card in AMDGPU_CARDS:
-        hwmon_dir = AMDGPU_CARDS[card]
-    else:
-        if len(AMDGPU_CARDS) > 0:
-            raise ValueError(f"Invalid card: '{card}'. Must be one of: {list(AMDGPU_CARDS.keys())}")
-        raise ValueError(f"Invalid card: '{card}', no AMD GPUs or hwmon directories found")
+    card = validate_card(card)
+    hwmon_dir = AMDGPU_CARDS[card]
 
     return {"limit": read_stat(path.join(hwmon_dir, "power1_cap"), stat_type='power'),
             "average": read_stat(path.join(hwmon_dir, "power1_average"), stat_type='power'),
@@ -108,10 +139,14 @@ def get_power_stats(card: str) -> dict:
             "default": read_stat(path.join(hwmon_dir, "power1_cap_default"), stat_type='power')}
 
 
-def get_core_stats(card: str) -> dict:
+def get_core_stats(card: Optional[str] = None) -> dict:
     """
     Args:
-        card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+        card (str, optional): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+
+    Raises:
+        ValueError: If *no* AMD cards are found, or `card` is not one of them.
+            Determined with `AMDGPU_CARDS`
 
     Returns:
         dict: A dictionary of current GPU *core/memory* related statistics.
@@ -122,26 +157,27 @@ def get_core_stats(card: str) -> dict:
             `{'sclk': int, 'mclk': int, 'voltage': float, 'util_pct': int}`
     """
     # verify card -- is it AMD, do we know the hwmon directory?
-    if card in AMDGPU_CARDS:
-        return {"sclk": get_clock(card, 'core'),
-                "mclk": get_clock(card, 'memory'),
-                "voltage": get_voltage(card),
-                "util_pct": get_gpu_usage(card)}
-    if len(AMDGPU_CARDS) > 0:
-        raise ValueError(f"Invalid card: '{card}'. Must be one of: {list(AMDGPU_CARDS.keys())}")
-    raise ValueError(f"Invalid card: '{card}', no AMD GPUs or hwmon directories found")
+    card = validate_card(card)
+    return {"sclk": get_clock('core', card=card),
+            "mclk": get_clock('memory', card=card),
+            "voltage": get_voltage(card),
+            "util_pct": get_gpu_usage(card)}
 
 
-def get_clock(card: str, domain: str, format_freq: bool = False) -> Union[int, str]:
+def get_clock(domain: str, card: Optional[str] = None, format_freq: Optional[bool] = False) -> Union[int, str]:
     """
     Args:
-        card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
-
         domain (str): The GPU domain of interest regarding clock speed.
             Must be one of CLOCK_DOMAINS
 
+        card (str, optional): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+
         format_freq (bool, optional): If True, a formatted string will be returned instead of an int.
             Defaults to False.
+
+    Raises:
+        ValueError: If *no* AMD cards are found, or `card` is not one of them.
+            Determined with `AMDGPU_CARDS`
 
     Returns:
         Union[int, str]: The clock value for the specified domain.
@@ -149,12 +185,8 @@ def get_clock(card: str, domain: str, format_freq: bool = False) -> Union[int, s
                          will be returned instead of an int
     """
     # verify card -- is it AMD, do we know the hwmon directory?
-    if card in AMDGPU_CARDS:
-        hwmon_dir = AMDGPU_CARDS[card]
-    else:
-        if len(AMDGPU_CARDS) > 0:
-            raise ValueError(f"Invalid card: '{card}'. Must be one of: {list(AMDGPU_CARDS.keys())}")
-        raise ValueError(f"Invalid card: '{card}', no AMD GPUs or hwmon directories found")
+    card = validate_card(card)
+    hwmon_dir = AMDGPU_CARDS[card]
     if domain not in CLOCK_DOMAINS:
         raise ValueError(f"Invalid clock domain: '{domain}'. Must be one of: {CLOCK_DOMAINS}")
     # set the clock file based on requested domain
@@ -168,81 +200,85 @@ def get_clock(card: str, domain: str, format_freq: bool = False) -> Union[int, s
     return int(read_stat(clock_file))
 
 
-def get_voltage(card: str) -> float:
+def get_voltage(card: Optional[str] = None) -> float:
     """
     Args:
-        card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+        card (str, optional): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+
+    Raises:
+        ValueError: If *no* AMD cards are found, or `card` is not one of them.
+            Determined with `AMDGPU_CARDS`
 
     Returns:
         float: The current GPU core voltage
     """
     # verify card -- is it AMD, do we know the hwmon directory?
-    if card in AMDGPU_CARDS:
-        hwmon_dir = AMDGPU_CARDS[card]
-    else:
-        if len(AMDGPU_CARDS) > 0:
-            raise ValueError(f"Invalid card: '{card}'. Must be one of: {list(AMDGPU_CARDS.keys())}")
-        raise ValueError(f"Invalid card: '{card}', no AMD GPUs or hwmon directories found")
+    card = validate_card(card)
+    hwmon_dir = AMDGPU_CARDS[card]
     return round(int(read_stat(path.join(hwmon_dir, "in0_input"))) / 1000.0, 2)
 
 
-def get_fan_rpm(card: str) -> int:
+def get_fan_rpm(card: Optional[str] = None) -> int:
     """
     Args:
         card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+
+    Raises:
+        ValueError: If *no* AMD cards are found, or `card` is not one of them.
+            Determined with `AMDGPU_CARDS`
 
     Returns:
         int: The *current* fan RPM
     """
     # verify card -- is it AMD, do we know the hwmon directory?
-    if card in AMDGPU_CARDS:
-        hwmon_dir = AMDGPU_CARDS[card]
-    else:
-        if len(AMDGPU_CARDS) > 0:
-            raise ValueError(f"Invalid card: '{card}'. Must be one of: {list(AMDGPU_CARDS.keys())}")
-        raise ValueError(f"Invalid card: '{card}', no AMD GPUs or hwmon directories found")
+    card = validate_card(card)
+    hwmon_dir = AMDGPU_CARDS[card]
     return int(read_stat(path.join(hwmon_dir, "fan1_input")))
 
 
-def get_fan_target(card: str) -> int:
+def get_fan_target(card: Optional[str] = None) -> int:
     """
     Args:
         card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+
+    Raises:
+        ValueError: If *no* AMD cards are found, or `card` is not one of them.
+            Determined with `AMDGPU_CARDS`
 
     Returns:
         int: The *target* fan RPM
     """
     # verify card -- is it AMD, do we know the hwmon directory?
-    if card in AMDGPU_CARDS:
-        hwmon_dir = AMDGPU_CARDS[card]
-    else:
-        if len(AMDGPU_CARDS) > 0:
-            raise ValueError(f"Invalid card: '{card}'. Must be one of: {list(AMDGPU_CARDS.keys())}")
-        raise ValueError(f"Invalid card: '{card}', no AMD GPUs or hwmon directories found")
+    card = validate_card(card)
+    hwmon_dir = AMDGPU_CARDS[card]
     return int(read_stat(path.join(hwmon_dir, "fan1_target")))
 
 
-def get_gpu_usage(card: str) -> int:
+def get_gpu_usage(card: Optional[str] = None) -> int:
     """
     Args:
         card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+
+    Raises:
+        ValueError: If *no* AMD cards are found, or `card` is not one of them.
+            Determined with `AMDGPU_CARDS`
 
     Returns:
         int: The current GPU usage/utilization as a percentage
     """
-    if card in AMDGPU_CARDS:
-        stat_file = path.join("/sys/class/drm/", card, "device/gpu_busy_percent")
-    else:
-        if len(AMDGPU_CARDS) > 0:
-            raise ValueError(f"Invalid card: '{card}'. Must be one of: {list(AMDGPU_CARDS.keys())}")
-        raise ValueError(f"Invalid card: '{card}', no AMD GPUs or hwmon directories found")
+    card = validate_card(card)
+    stat_file = path.join("/sys/class/drm/", card, "device/gpu_busy_percent")
     return int(read_stat(stat_file))
 
 
-def get_temp_stats(card: str) -> dict:
+def get_temp_stats(card: Optional[str] = None) -> dict:
     """
     Args:
         card (str): Card identifier from `/dev/dri/`, ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+
+    Raises:
+        ValueError: If *no* AMD cards are found, or `card` is not one of them.
+            Determined with `AMDGPU_CARDS`
 
     Returns:
         dict: A dictionary of current GPU *temperature* related statistics
@@ -250,18 +286,14 @@ def get_temp_stats(card: str) -> dict:
         Example:
             `{'name_temp_node_1': int, 'name_temp_node_2': int, 'name_temp_node_3': int}`
 
-        Dictionary keys (temp nodes) are dynamically contructed through discovery.
+        Dictionary keys (temp nodes/names) are constructed through discovery.
 
         Driver provides temperatures in *millidegrees* C
 
-        Returned values are converted to C, as integers for simple comparison
-     """
-    if card in AMDGPU_CARDS:
-        hwmon_dir = AMDGPU_CARDS[card]
-    else:
-        if len(AMDGPU_CARDS) > 0:
-            raise ValueError(f"Invalid card: '{card}'. Must be one of: {list(AMDGPU_CARDS.keys())}")
-        raise ValueError(f"Invalid card: '{card}', no AMD GPUs or hwmon directories found")
+        Returned values are converted to 'C' as integers for simple comparison
+    """
+    card = validate_card(card)
+    hwmon_dir = AMDGPU_CARDS[card]
     # determine temperature nodes, construct a dict to store them
     # interface will iterate over these, creating labels as needed
     temp_files = {}
