@@ -71,13 +71,13 @@ class GPUStats(App):
     """Textual-based tool to show AMDGPU statistics."""
 
     # apply stylesheet
-    CSS_PATH = 'amdgpu_stats.css'
+    CSS_PATH = 'style.css'
 
     # initialize log screen
     SCREENS = {"logs": LogScreen()}
 
     # title the app after the card
-    TITLE = CARD
+    TITLE = 'GPUStats - ' + CARD
 
     # setup keybinds
     #    Binding("l", "push_screen('logs')", "Toggle logs", priority=True),
