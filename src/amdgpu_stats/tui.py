@@ -1,7 +1,9 @@
 """
-interface.py
+tui.py
 
-This module provides the TUI aspect of 'amdgpu-stats'
+This file provides the user interface of `amdgpu-stats`
+
+Can be used as a way to monitor GPU(s) in your terminal, or inform other utilities.
 
 Classes:
     - GPUStats: the object for the _Application_, instantiated at runtime
@@ -12,9 +14,11 @@ Classes:
     - LogScreen: Second screen with the logging widget, header, and footer
 
 Functions:
-    - tui: Renders the TUI using the classes above
+    - interface: Renders the TUI using the classes above
 """
 import sys
+from datetime import datetime
+from os import path
 
 from textual.binding import Binding
 from textual.app import App, ComposeResult
@@ -44,7 +48,7 @@ class LogScreen(Screen):
         On first display in this case."""
 
     def compose(self) -> ComposeResult:
-        yield Header()
+        yield Header(show_clock=True)
         yield Container(self.text_log)
         yield Footer()
 
@@ -72,17 +76,21 @@ class GPUStats(App):
     # initialize log screen
     SCREENS = {"logs": LogScreen()}
 
+    # title the app after the card
+    TITLE = CARD
+
     # setup keybinds
     #    Binding("l", "push_screen('logs')", "Toggle logs", priority=True),
     BINDINGS = [
-        Binding("c", "toggle_dark", "Toggle colors", priority=True),
-        Binding("l", "toggle_log", "Toggle logs", priority=True),
-        Binding("q", "quit_app", "Quit", priority=True)
+        Binding("s", "screenshot_wrapper", "Screenshot"),
+        Binding("c", "custom_dark", "Toggle colors"),
+        Binding("l", "toggle_log", "Toggle logs"),
+        Binding("q", "quit", "Quit")
     ]
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
-        yield Header()
+        yield Header(show_clock=True)
         yield Container(GPUStatsWidget())
         self.update_log("[bold green]App started, logging begin!")
         self.update_log(f"[bold italic]Information source:[/] {hwmon_dir}")
@@ -93,16 +101,23 @@ class GPUStats(App):
         #    self.update_log(f'[bold]  {metric} temperature:[/] {source}')
         yield Footer()
 
-    def action_toggle_dark(self) -> None:
-        """An action to toggle dark mode."""
+    async def action_custom_dark(self) -> None:
+        """An action to toggle dark mode.
+
+        Wraps 'action_toggle_dark' with logging and a refresh"""
         self.dark = not self.dark
         self.update_log(f"[bold]Dark side: [italic]{self.dark}")
+        self.refresh()
+        # self.dark = not self.dark
 
-    def action_quit_app(self) -> None:
-        """An action to quit the program"""
-        message = "Exiting on user request"
-        self.update_log(f"[bold]{message}")
-        self.exit(message)
+    def action_screenshot_wrapper(self, screen_dir: str = '/tmp') -> None:
+        """Action that fires when the user presses 's' for a screenshot"""
+        # construct the screenshot elements + path
+        timestamp = datetime.now().isoformat().replace(":", "_")
+        screen_name = 'amdgpu_stats_' + timestamp + '.svg'
+        screen_path = path.join(screen_dir, screen_name)
+        self.action_screenshot(path=screen_dir, filename=screen_name)
+        self.update_log(f'[bold]Screenshot taken: [italic]{screen_path}')
 
     def action_toggle_log(self) -> None:
         """Toggle between the main screen and the LogScreen."""
@@ -144,14 +159,14 @@ class MiscDisplay(Static):
         for temp_node in self.initial_stats:
             # capitalize the first letter for display
             caption = temp_node[0].upper() + temp_node[1:]
-            yield Horizontal(Label(f'  {caption}:',),
+            yield Horizontal(Label(f' {caption}:',),
                              Label("", id="temp_" + temp_node,
                                    classes="statvalue"))
         yield Horizontal(Label("[underline]Fan RPM"),
                          Label("", classes="statvalue"))
-        yield Horizontal(Label("  Current:",),
+        yield Horizontal(Label(" Current:",),
                          Label("", id="fan_rpm", classes="statvalue"))
-        yield Horizontal(Label("  Target:",),
+        yield Horizontal(Label(" Target:",),
                          Label("", id="fan_rpm_target", classes="statvalue"))
         self.composed = True
 
@@ -202,17 +217,17 @@ class ClockDisplay(Static):
     def compose(self) -> ComposeResult:
         yield Horizontal(Label("[underline]Clocks"),
                          Label("", classes="statvalue"))
-        yield Horizontal(Label("  GPU core:",),
+        yield Horizontal(Label(" GPU core:",),
                          Label("", id="clk_core_val", classes="statvalue"))
-        yield Horizontal(Label("  Memory:"),
+        yield Horizontal(Label(" Memory:"),
                          Label("", id="clk_memory_val", classes="statvalue"))
         # padding to split groups
         yield Horizontal(Label(""), Label("", classes="statvalue"))
         yield Horizontal(Label("[underline]Core"),
                          Label("", classes="statvalue"))
-        yield Horizontal(Label("  Utilization:",),
+        yield Horizontal(Label(" Utilization:",),
                          Label("", id="util_pct", classes="statvalue"))
-        yield Horizontal(Label("  Voltage:",),
+        yield Horizontal(Label(" Voltage:",),
                          Label("", id="clk_voltage_val", classes="statvalue"))
 
     def on_mount(self) -> None:
@@ -253,17 +268,17 @@ class PowerDisplay(Static):
     def compose(self) -> ComposeResult:
         yield Horizontal(Label("[underline]Power"),
                          Label("", classes="statvalue"))
-        yield Horizontal(Label("  Usage:",),
+        yield Horizontal(Label(" Usage:",),
                          Label("", id="pwr_avg_val", classes="statvalue"))
         # padding to split groups
         yield Horizontal(Label(""), Label("", classes="statvalue"))
         yield Horizontal(Label("[underline]Limits"),
                          Label("", classes="statvalue"))
-        yield Horizontal(Label("  Configured:",),
+        yield Horizontal(Label(" Configured:",),
                          Label("", id="pwr_lim_val", classes="statvalue"))
-        yield Horizontal(Label("  Default:",),
+        yield Horizontal(Label(" Default:",),
                          Label("", id="pwr_def_val", classes="statvalue"))
-        yield Horizontal(Label("  Board capability:",),
+        yield Horizontal(Label(" Board capability:",),
                          Label("", id="pwr_cap_val", classes="statvalue"))
 
     def on_mount(self) -> None:
@@ -290,10 +305,10 @@ class PowerDisplay(Static):
                        Static).update(f"{watts['capability']}W")
 
 
-def tui() -> None:
+def interface() -> None:
     '''Spawns the textual UI only during CLI invocation / after argparse'''
     if len(AMDGPU_CARDS) > 0:
-        app = GPUStats()
+        app = GPUStats(watch_css=True)
         app.run()
     else:
         sys.exit('Could not find an AMD GPU, exiting.')
