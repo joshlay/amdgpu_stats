@@ -155,8 +155,8 @@ class MiscDisplay(Static):
     fan_rpm = reactive(0)
     fan_rpm_target = reactive(0)
     # do some dancing to craft the UI; initialize the reactive obj with data
-    # to get proper labels
     # dynamic object for temperature updates
+    # populated / looped in '__init__' to get proper labels
     temp_stats = reactive({})
     # default to 'not composed', once labels are made - become true
     # avoids a race condition between discovering temperature nodes/stats
