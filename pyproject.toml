@@ -14,7 +14,7 @@ textual = ">=0.10"
 humanfriendly = ">=10.0"
 
 [tool.poetry.scripts]
-amdgpu-stats = "amdgpu_stats.tui:interface"
+amdgpu-stats = "amdgpu_stats.tui:start"
 
 [build-system]
 requires = ["poetry-core"]
