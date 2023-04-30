@@ -73,11 +73,11 @@ class GPUStatsWidget(Static):
 
     def update_log(self, message: str) -> None:
         """Update the TextLog widget with a new message."""
-        log_screen = AMDGPU_Stats.SCREENS["logs"]
+        log_screen = AMDGPUStats.SCREENS["logs"]
         log_screen.text_log.write(message)
 
 
-class AMDGPU_Stats(App):
+class AMDGPUStats(App):
     """Textual-based tool to show AMDGPU statistics."""
 
     # apply stylesheet
@@ -329,7 +329,7 @@ class PowerDisplay(Static):
 def start() -> None:
     '''Spawns the textual UI only during CLI invocation / after argparse'''
     if len(AMDGPU_CARDS) > 0:
-        app = AMDGPU_Stats(watch_css=True)
+        app = AMDGPUStats(watch_css=True)
         app.run()
     else:
         sys.exit('Could not find an AMD GPU, exiting.')
