@@ -1,23 +1,38 @@
+Header {
+    background: $panel;
+}
+
 GPUStatsWidget {
-	layout: grid;
-	grid-size: 3;
-	grid-gutter: 2 12;
-	background: $boost;
-	height: 11;
-	min-width: 50;
-	padding: 1;
+    layout: grid;
+    grid-size: 3;
+    grid-gutter: 2 8;
+    box-sizing: content-box;
+    background: $panel;
+    height: 10;
+    min-width: 50;
 }
 
 /* for colors, see: https://textual.textualize.io/guide/design/#theme-reference */
 
+.widgetheader {
+    background: $panel;
+    border: solid $primary-background;
+    content-align: center middle;
+}
+
 .box {
-	height: 100%;
-/*	border: ascii $primary-background;*/
-	border: solid $primary-background;
-	content-align: center middle;
-	padding: 0 1;
+    height: 100%;
+/*  border: ascii $primary-background;*/
+    content-align: center middle;
+    padding: 0 1;
+}
+
+Horizontal {
+    padding: 0;
+    margin: 0;
+    box-sizing: content-box;
 }
 
 .statvalue {
-	dock: right;
+    dock: right;
 }
