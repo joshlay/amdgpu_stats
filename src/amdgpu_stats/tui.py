@@ -14,7 +14,7 @@ Classes:
     - LogScreen: Second screen with the logging widget, header, and footer
 
 Functions:
-    - interface: Renders the TUI using the classes above
+    - start: Creates the 'App' and renders the TUI using the classes above
 """
 # disable superfluouos linting
 # pylint: disable=line-too-long
