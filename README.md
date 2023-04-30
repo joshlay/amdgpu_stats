@@ -1,6 +1,6 @@
 # amdgpu_stats
 
-A simple Python module/TUI for AMD GPU statistics
+A Python module/TUI for AMD GPU statistics
 
 ![Screenshot of main screen](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/main.png "Main screen")
 
@@ -35,7 +35,7 @@ For more information on what the module provides, please see:
  - `help('amdgpu_stats.utils')` in your interpreter
  - [The module source](https://github.com/joshlay/amdgpu_stats/blob/master/src/amdgpu_stats/utils.py)
 
-Feature requests [are encouraged](https://github.com/joshlay/amdgpu_stats/issues) :)
+Feature requests [are encouraged](https://github.com/joshlay/amdgpu_stats/issues) 😀
 
 ## Requirements
 Only `Linux` is supported. Information is _completely_ sourced from interfaces in `sysfs`.
