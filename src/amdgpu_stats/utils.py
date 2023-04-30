@@ -132,11 +132,16 @@ def get_power_stats(card: Optional[str] = None) -> dict:
     """
     card = validate_card(card)
     hwmon_dir = AMDGPU_CARDS[card]
-
-    return {"limit": read_stat(path.join(hwmon_dir, "power1_cap"), stat_type='power'),
+    _pwr = {"limit": read_stat(path.join(hwmon_dir, "power1_cap"), stat_type='power'),
+            "limit_pct": 0,
             "average": read_stat(path.join(hwmon_dir, "power1_average"), stat_type='power'),
             "capability": read_stat(path.join(hwmon_dir, "power1_cap_max"), stat_type='power'),
             "default": read_stat(path.join(hwmon_dir, "power1_cap_default"), stat_type='power')}
+
+    if _pwr['limit'] != 0:
+        _pwr['limit_pct'] = round((_pwr['average'] / _pwr['limit']) * 100, 1)
+
+    return _pwr
 
 
 def get_core_stats(card: Optional[str] = None) -> dict:

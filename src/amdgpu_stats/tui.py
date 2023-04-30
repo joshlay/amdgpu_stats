@@ -277,6 +277,7 @@ class PowerDisplay(Static):
     """A widget to display GPU power stats."""
 
     watts = reactive({"limit": 0,
+                      "limit_pct": 0,
                       "average": 0,
                       "capability": 0,
                       "default": 0})
@@ -318,7 +319,7 @@ class PowerDisplay(Static):
          - Updates label values
          - Casting inputs to string to avoid type problems w/ int/None"""
         self.query_one("#pwr_avg_val",
-                       Static).update(f"{watts['average']}W")
+                       Static).update(f"{watts['limit_pct']}%, {watts['average']}W")
         self.query_one("#pwr_lim_val",
                        Static).update(f"{watts['limit']}W")
         self.query_one("#pwr_def_val",
