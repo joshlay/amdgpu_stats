@@ -16,6 +16,8 @@ Classes:
 Functions:
     - interface: Renders the TUI using the classes above
 """
+# disable superfluouos linting
+# pylint: disable=line-too-long
 import sys
 from datetime import datetime
 from os import path
@@ -68,7 +70,7 @@ class GPUStatsWidget(Static):
         yield ClockDisplay(classes="box", card=self.card, hwmon_dir=self.hwmon_dir)
         yield PowerDisplay(classes="box", card=self.card, hwmon_dir=self.hwmon_dir)
         yield MiscDisplay(classes="box", card=self.card)
-        _msg = f'[bold]App:[/] creating stat widgets for [green]{self.card}[/], info directory: {self.hwmon_dir}'
+        _msg = f'''[bold]App:[/] creating stat widgets for [green]{self.card}[/], stats directory: {self.hwmon_dir}'''
         self.update_log(_msg)
 
     def update_log(self, message: str) -> None:
