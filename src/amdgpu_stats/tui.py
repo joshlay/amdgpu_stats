@@ -167,13 +167,12 @@ class MiscDisplay(Static):
         super().__init__(*args, **kwargs)
         self.timer_misc = None
         self.card = card
-        self.initial_stats = get_temp_stats(self.card)
         self.temp_stats = get_temp_stats(self.card)
 
     def compose(self) -> ComposeResult:
         yield Horizontal(Label("[underline]Temperatures"),
                          Label("", classes="statvalue"))
-        for temp_node in self.initial_stats:
+        for temp_node in self.temp_stats:
             # capitalize the first letter for display
             caption = temp_node[0].upper() + temp_node[1:]
             yield Horizontal(Label(f' {caption}:',),
