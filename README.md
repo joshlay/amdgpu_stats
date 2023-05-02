@@ -2,9 +2,7 @@
 
 A Python module/TUI for AMD GPU statistics
 
-![Screenshot of main screen](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/main.png "Main screen")
-
-Supported GPUs and temperature nodes (`edge`/`junction`/etc.) are discovered automatically.
+![Screenshot of main screen](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/main.svg "Main screen")
 
 Tested _only_ on `RX6000` series cards; APUs and more _may_ be supported. Please file an issue if finding incompatibility!
 
