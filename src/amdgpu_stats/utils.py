@@ -132,11 +132,16 @@ def get_power_stats(card: Optional[str] = None) -> dict:
     """
     card = validate_card(card)
     hwmon_dir = AMDGPU_CARDS[card]
-
-    return {"limit": read_stat(path.join(hwmon_dir, "power1_cap"), stat_type='power'),
+    _pwr = {"limit": read_stat(path.join(hwmon_dir, "power1_cap"), stat_type='power'),
+            "limit_pct": 0,
             "average": read_stat(path.join(hwmon_dir, "power1_average"), stat_type='power'),
             "capability": read_stat(path.join(hwmon_dir, "power1_cap_max"), stat_type='power'),
             "default": read_stat(path.join(hwmon_dir, "power1_cap_default"), stat_type='power')}
+
+    if _pwr['limit'] != 0:
+        _pwr['limit_pct'] = round((_pwr['average'] / _pwr['limit']) * 100, 1)
+
+    return _pwr
 
 
 def get_core_stats(card: Optional[str] = None) -> dict:
@@ -271,31 +276,25 @@ def get_gpu_usage(card: Optional[str] = None) -> int:
     return int(read_stat(stat_file))
 
 
-def get_temp_stats(card: Optional[str] = None) -> dict:
+def get_available_temps(card: Optional[str] = None) -> dict:
     """
     Args:
         card (str, optional): ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
 
     Raises:
         ValueError: If *no* AMD cards are found, or `card` is not one of them.
-            Determined with `AMDGPU_CARDS`
 
     Returns:
-        dict: A dictionary of current GPU *temperature* related statistics
+        dict: Discovered temperature `nodes` and paths to their value files
+
+        If none are found, will be empty.
 
         Example:
-            `{'name_temp_node_1': int, 'name_temp_node_2': int, 'name_temp_node_3': int}`
-
-        Dictionary keys (temp nodes/names) are constructed through discovery.
-
-        Driver provides temperatures in *millidegrees* C
-
-        Returned values are converted to 'C' as integers for simple comparison
+            `{'edge': '/.../temp1_input', 'junction': '/.../temp2_input', 'mem': '/.../temp3_input'}`
     """
     card = validate_card(card)
     hwmon_dir = AMDGPU_CARDS[card]
-    # determine temperature nodes, construct a dict to store them
-    # interface will iterate over these, creating labels as needed
+    # determine temperature nodes/types, construct a dict to store them
     temp_files = {}
     temp_node_labels = glob.glob(path.join(hwmon_dir, "temp*_label"))
     for temp_node_label_file in temp_node_labels:
@@ -307,11 +306,34 @@ def get_temp_stats(card: Optional[str] = None) -> dict:
             temp_node_name = _node.read().strip()
         # add the node name/type and the corresponding temp file to the dict
         temp_files[temp_node_name] = temp_node_value_file
+    return temp_files
 
-    temp_update = {}
-    for temp_node, temp_file in temp_files.items():
-        # iterate through the discovered temperature nodes
-        # ... updating the dictionary with new stats
-        _temperature = int(int(read_stat(temp_file)) // 1000)
-        temp_update[temp_node] = _temperature
-    return temp_update
+
+def get_temp_stat(name: str, card: Optional[str] = None) -> dict:
+    """
+    Args:
+        card (str, optional): ie: `card0`. See `AMDGPU_CARDS` or `find_cards()`
+        name (str): temperature *name*, ie: `edge`, `junction`, or `mem`
+
+    Raises:
+        ValueError: If *no* AMD cards are found, or `card` is not one of them.
+            *Or* Invalid temperature name is provided.
+
+    Returns:
+        int: Requested GPU temperature (type, by `name`).
+            Either the first AMD card, or one specified with `card=`.
+
+        Driver provides temperatures in *millidegrees* C
+
+        Returned values are converted to 'C' as integers for simple comparison
+    """
+    card = validate_card(card)
+    # determine temperature nodes/types, construct a dict to store them
+    temp_files = get_available_temps(card=card)
+
+    # now that we know the temperature nodes/types for 'card', check request
+    if name not in temp_files:
+        raise ValueError(f'{name} does not appear to be valid, temp nodes: {list(temp_files.keys())}')
+
+    # if the requested temperature node was found, read it / convert to C
+    return int(int(read_stat(temp_files[name])) // 1000)
