@@ -39,10 +39,16 @@ from .utils import (
 
 
 class Notification(Static):
+    '''Self-removing notification widget'''
+
     def on_mount(self) -> None:
+        '''On the creation/display of the notification...
+
+        Creates a timer to remove itself in 3 seconds'''
         self.set_timer(3, self.remove)
 
     def on_click(self) -> None:
+        '''Fires when notification is clicked, removes the widget'''
         self.remove()
 
 
