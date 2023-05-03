@@ -10,7 +10,7 @@ documentation = "https://amdgpu-stats.readthedocs.io/en/latest/"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-textual = ">=0.11"
+textual = ">=0.16.0"
 humanfriendly = ">=10.0"
 
 [tool.poetry.scripts]
