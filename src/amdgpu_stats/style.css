@@ -1,17 +1,42 @@
-Header {
-    background: $panel;
-}
+/* for colors, see: https://textual.textualize.io/guide/design/#theme-reference */
 
 GPUStatsWidget {
-    box-sizing: content-box;
+/*    box-sizing: content-box;*/
     background: $panel;
     height: 100%;
     width: 100%;
-    min-width: 50;
+/*    min-width: 50;*/
+}
+.logs {
+    height: 1fr;
 }
 
-/* for colors, see: https://textual.textualize.io/guide/design/#theme-reference */
-
-DataTable {
+.stat_table {
     width: 100%;
+}
+
+Container {
+    height: 1fr;
+}
+
+TabbedContent {
+/*    box-sizing: content-box;*/
+    height: 1fr;
+}
+
+Notification {
+    dock: bottom;
+    layer: notification;
+    width: auto;
+    margin: 2 4;
+    padding: 1 2;
+    background: $background;
+    color: $text;
+    height: auto;
+}
+
+Header {
+    dock: top;
+    content-align: center middle;
+    background: $panel;
 }
