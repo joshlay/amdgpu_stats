@@ -1,2 +1,2 @@
-textual==0.10.*
+textual>=0.16.0
 humanfriendly==10.0
