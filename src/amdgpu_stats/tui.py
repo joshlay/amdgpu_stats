@@ -22,7 +22,13 @@ from textual.binding import Binding
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.widgets import (
-        Header, Footer, Static, TextLog, DataTable, TabbedContent
+        Header,
+        Footer,
+        Static,
+        TextLog,
+        DataTable,
+        TabbedContent,
+        TabPane,
         )
 
 from .utils import (
@@ -32,7 +38,7 @@ from .utils import (
         get_temp_stat,
         get_clock,
         get_gpu_usage,
-        get_voltage
+        get_voltage,
 )
 # rich markup reference:
 #    https://rich.readthedocs.io/en/stable/markup.html
@@ -55,6 +61,7 @@ class Notification(Static):
 class GPUStatsWidget(Static):
     """The main stats widget."""
 
+    # define the columns for the stats table; used as keys during update
     columns = ["Card",
                "Core clock",
                "Memory clock",
@@ -68,54 +75,63 @@ class GPUStatsWidget(Static):
                "Edge temp",
                "Junction temp",
                "Memory temp"]
-    timer_stats = None
-    text_log = None
-    stats_table = None
-    table = None
-    table_needs_init = True
+    # initialize empty/default instance vars
     data = {}
+    stats_table = None
+    text_log = None
+    tabbed_container = None
+    table = None
+    # mark the table as needing initialization (with rows)
+    table_needs_init = True
+    timer_stats = None
 
     def __init__(self, *args, cards=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.cards = cards
-        self.text_log = TextLog(highlight=True, markup=True, name='log_gpu', classes='logs')
-        self.stats_table = DataTable(zebra_stripes=True, show_cursor=False, name='stats_table', classes='stat_table')
+        self.text_log = TextLog(highlight=True,
+                                markup=True,
+                                name='log_gpu',
+                                classes='logs')
+        self.stats_table = DataTable(zebra_stripes=True,
+                                     show_cursor=False,
+                                     name='stats_table',
+                                     classes='stat_table')
+        self.tabbed_container = TabbedContent()
 
     async def on_mount(self) -> None:
-        '''Fires when stats widget first shown'''
-        self.table = self.query_one(DataTable)
+        '''Fires when stats widget 'mounted', behaves like on first showing'''
         # construct the table columns
         for column in self.columns:
-            self.table.add_column(label=column, key=column)
-        # mark the table as needing initialization (with rows)
-        self.table_needs_init = True
+            self.stats_table.add_column(label=column, key=column)
         # do a one-off stat collection, populate table before the interval
-        if self.table_needs_init:
-            self.get_stats()
+        self.get_stats()
         # stand up the stat-collecting interval, once per second
         self.timer_stats = self.set_interval(1, self.get_stats)
 
     def compose(self) -> ComposeResult:
         """Create child widgets."""
-        # Add the TabbedContent widget
-        with TabbedContent("Stats", "Logs"):
-            yield self.stats_table
-            yield self.text_log
         self.update_log("[bold green]App started, logging begin!")
         self.update_log(f"[bold]Discovered AMD GPUs: [/]{list(AMDGPU_CARDS)}")
-        self.update_log('[bold]App: [/]created stats table')
+        # Add the TabbedContent widget
+        with self.tabbed_container:
+            with TabPane("Stats", id="tab_stats"):
+                yield self.stats_table
+                self.update_log('[bold]App: [/]created stats table')
+            with TabPane("Logs", id="tab_logs"):
+                yield self.text_log
 
     def update_log(self, message: str) -> None:
         """Update the TextLog widget with a new message."""
         self.text_log.write(message)
 
     def get_stats(self):
-        '''Function to fetch stats / update the table'''
+        '''Function to fetch stats / update the table for each AMD GPU found'''
         for card in self.cards:
             power_stats = get_power_stats(card=card)
             # annoyingly, must retain the styling used w/ the cols above
             # otherwise stats won't update
             #   noticed when fiddling 'style' below between new/update 'Text'
+            # should store their IDs on creation and map those instead
             self.data = {
                     "Card": card,
                     "Core clock": get_clock('core', card=card, format_freq=True),
@@ -138,18 +154,17 @@ class GPUStatsWidget(Static):
                 styled_row = [
                     Text(str(cell), style="normal", justify="right") for cell in self.data.values()
                 ]
-                self.table.add_row(*styled_row, key=card)
+                self.stats_table.add_row(*styled_row, key=card)
                 hwmon_dir = AMDGPU_CARDS[card]
                 self.update_log(f"[bold]Table: [/]added row for '{card}', info dir: '{hwmon_dir}'")
             else:
                 # Update existing rows, retaining styling/justification
                 for column, value in self.data.items():
                     styled_cell = Text(str(value), style="normal", justify="right")
-                    self.table.update_cell(card, column, styled_cell)
+                    self.stats_table.update_cell(card, column, styled_cell)
         if self.table_needs_init:
             # if this is the first time updating the table, mark it initialized
             self.table_needs_init = False
-        self.table.refresh()
 
 
 class AMDGPUStats(App):
@@ -157,6 +172,9 @@ class AMDGPUStats(App):
 
     # apply stylesheet
     CSS_PATH = 'style.css'
+
+    # set the title - same as the class, but with spaces
+    TITLE = 'AMD GPU Stats'
 
     # setup keybinds
     BINDINGS = [
@@ -184,29 +202,26 @@ class AMDGPUStats(App):
     def action_custom_screenshot(self, screen_dir: str = '/tmp') -> None:
         """Action that fires when the user presses 's' for a screenshot"""
         # construct the screenshot elements: name (w/ ISO timestamp) + path
-        timestamp = datetime.now().isoformat().replace(":", "_")
-        screen_name = 'amdgpu_stats_' + timestamp + '.svg'
+        screen_name = ('amdgpu_stats_' +
+                       datetime.now().isoformat().replace(":", "_") +
+                       '.svg')
         # take the screenshot, recording the path for logging/notification
         outpath = self.save_screenshot(path=screen_dir, filename=screen_name)
         # construct the log/notification message, then show it
-        message = Text.assemble("Screenshot saved to ", (f"'{outpath}'", "bold"))
+        message = f"[bold]Screenshot saved to [green]'{outpath}'"
         self.screen.mount(Notification(message))
         self.update_log(message)
 
     def action_custom_log(self) -> None:
         """Toggle between the main screen and the LogScreen."""
-        active = self.query_one(TabbedContent).active
-        # if the second tab (logs), go to first
-        if active == "tab-2":
-            self.query_one(TabbedContent).active = 'tab-1'
+        if self.stats_widget.tabbed_container.active == "tab_stats":
+            self.stats_widget.tabbed_container.active = 'tab_logs'
         else:
-            # otherwise, go to logs
-            self.query_one(TabbedContent).active = 'tab-2'
+            self.stats_widget.tabbed_container.active = 'tab_stats'
 
     def update_log(self, message: str) -> None:
         """Update the TextLog widget with a new message."""
-        log = self.stats_widget.text_log
-        log.write(message)
+        self.stats_widget.text_log.write(message)
 
 
 def start() -> None:
