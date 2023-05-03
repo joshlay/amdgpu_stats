@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "amdgpu-stats"
-version = "0.1.13"
+version = "0.1.14"
 description = "A module/TUI for AMD GPU statistics"
 authors = ["Josh Lay <pypi@jlay.io>"]
 repository = "https://github.com/joshlay/amdgpu_stats"
