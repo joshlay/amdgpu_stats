@@ -77,7 +77,6 @@ class GPUStatsWidget(Static):
 
     def __init__(self, *args, cards=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # Instance variables
         self.cards = cards
         self.text_log = TextLog(highlight=True, markup=True, name='log_gpu', classes='logs')
         self.stats_table = DataTable(zebra_stripes=True, show_cursor=False, name='stats_table', classes='stat_table')
@@ -159,11 +158,7 @@ class AMDGPUStats(App):
     # apply stylesheet
     CSS_PATH = 'style.css'
 
-    # title the app after the card
-    # TITLE = 'GPUStats - ' + CARD
-
     # setup keybinds
-    #    Binding("l", "push_screen('logs')", "Toggle logs", priority=True),
     BINDINGS = [
         Binding("c", "custom_dark", "Colors"),
         Binding("l", "custom_log", "Logs"),
@@ -178,11 +173,6 @@ class AMDGPUStats(App):
         yield Header(show_clock=True)
         yield Footer()
         yield Container(self.stats_widget)
-        # nice-to-have: account for not storing these in dicts, but resolved in funcs
-        # for metric, source in SRC_FILES.items():
-        #    self.update_log(f'[bold]  {metric}:[/] {source}')
-        # for metric, source in TEMP_FILES.items():
-        #    self.update_log(f'[bold]  {metric} temperature:[/] {source}')
 
     def action_custom_dark(self) -> None:
         """An action to toggle dark mode.
@@ -190,8 +180,6 @@ class AMDGPUStats(App):
         Wraps 'action_toggle_dark' with logging and a refresh"""
         self.app.dark = not self.app.dark
         self.update_log(f"[bold]Dark side: [italic]{self.app.dark}")
-        # self.refresh()
-        # self.dark = not self.dark
 
     def action_custom_screenshot(self, screen_dir: str = '/tmp') -> None:
         """Action that fires when the user presses 's' for a screenshot"""
