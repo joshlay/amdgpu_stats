@@ -177,7 +177,7 @@ class GPUStatsWidget(Static):
             self.table_needs_init = False
 
 
-class app(App):
+class app(App):  # pylint: disable=invalid-name
     """Textual-based tool to show AMDGPU statistics."""
 
     # apply stylesheet; this is watched/dynamically reloaded
