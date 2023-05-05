@@ -1,13 +1,12 @@
 """TUI for amdgpu_stats
 
-This file aims to ensure the TUI only starts in interactive shells"""
-from .tui import start
+This file aims to ensure the TUI only starts in interactive shells
 
+import/use 'amdgpu_stats.utils' to access functions for metrics"""
 
-def main():
-    """main function, spawns the TUI for amdgpu_stats"""
-    start()
-
+from . import textual_run
 
 if __name__ == "__main__":
-    main()
+    textual_run()
+else:
+    pass

@@ -14,8 +14,8 @@ Functions:
 """
 # disable superfluouos linting
 # pylint: disable=line-too-long
-import sys
 from datetime import datetime
+from typing import Optional
 
 from rich.text import Text
 from textual.binding import Binding
@@ -61,39 +61,62 @@ class Notification(Static):
 class GPUStatsWidget(Static):
     """The main stats widget."""
 
-    # define the columns for the stats table; used as keys during update
-    columns = ["Card",
-               "Core clock",
-               "Memory clock",
-               "Utilization",
-               "Voltage",
-               "Power",
-               "[italic]Limit",
-               "[italic]Default",
-               "[italic]Capability",
-               "Fan RPM",
-               "Edge temp",
-               "Junction temp",
-               "Memory temp"]
-    # initialize empty/default instance vars
+    def get_column_data_mapping(self, card: Optional[str] = None) -> dict:
+        '''Returns a dictionary of stats
+
+        Columns are derived from keys, and values provide measurements
+        *Measurements require `card`*'''
+        if card is None:
+            return {
+                "Card": "",
+                "Core clock": "",
+                "Memory clock": "",
+                "Utilization": "",
+                "Voltage": "",
+                "Power": "",
+                "[italic]Limit": "",
+                "[italic]Default": "",
+                "[italic]Capability": "",
+                "Fan RPM": "",
+                "Edge temp": "",
+                "Junction temp": "",
+                "Memory temp": ""
+            }
+        return {
+            "Card": card,
+            "Core clock": get_clock('core', card=card, format_freq=True),
+            "Memory clock": get_clock('memory', card=card, format_freq=True),
+            "Utilization": f'{get_gpu_usage(card=card)}%',
+            "Voltage": f'{get_voltage(card=card)}V',
+            "Power": f'{get_power_stats(card=card)["average"]}W',
+            "[italic]Limit": f'{get_power_stats(card=card)["limit"]}W',
+            "[italic]Default": f'{get_power_stats(card=card)["default"]}W',
+            "[italic]Capability": f'{get_power_stats(card=card)["capability"]}W',
+            "Fan RPM": f'{get_fan_rpm(card=card)}',
+            "Edge temp": f"{get_temp_stat(name='edge', card=card)}C",
+            "Junction temp": f"{get_temp_stat(name='junction', card=card)}C",
+            "Memory temp": f"{get_temp_stat(name='mem', card=card)}C"
+        }
+
+    # initialize empty/default instance vars and objects
     data = {}
     stats_table = None
-    text_log = None
     tabbed_container = None
-    table = None
+    text_log = None
+    timer_stats = None
     # mark the table as needing initialization (with rows)
     table_needs_init = True
-    timer_stats = None
 
     def __init__(self, *args, cards=None, **kwargs):
         super().__init__(*args, **kwargs)
+
         self.cards = cards
         self.text_log = TextLog(highlight=True,
                                 markup=True,
                                 name='log_gpu',
                                 classes='logs')
         self.stats_table = DataTable(zebra_stripes=True,
-                                     show_cursor=False,
+                                     show_cursor=True,
                                      name='stats_table',
                                      classes='stat_table')
         self.tabbed_container = TabbedContent()
@@ -101,12 +124,13 @@ class GPUStatsWidget(Static):
     async def on_mount(self) -> None:
         '''Fires when stats widget 'mounted', behaves like on first showing'''
         # construct the table columns
-        for column in self.columns:
+        columns = list(self.get_column_data_mapping(None).keys())
+        for column in columns:
             self.stats_table.add_column(label=column, key=column)
         # do a one-off stat collection, populate table before the interval
         self.get_stats()
-        # stand up the stat-collecting interval, once per second
-        self.timer_stats = self.set_interval(1, self.get_stats)
+        # stand up the stat-collecting interval, twice per second
+        self.timer_stats = self.set_interval(0.5, self.get_stats)
 
     def compose(self) -> ComposeResult:
         """Create child widgets."""
@@ -127,25 +151,11 @@ class GPUStatsWidget(Static):
     def get_stats(self):
         '''Function to fetch stats / update the table for each AMD GPU found'''
         for card in self.cards:
-            power_stats = get_power_stats(card=card)
             # annoyingly, must retain the styling used w/ the cols above
             # otherwise stats won't update
             #   noticed when fiddling 'style' below between new/update 'Text'
             # should store their IDs on creation and map those instead
-            self.data = {
-                    "Card": card,
-                    "Core clock": get_clock('core', card=card, format_freq=True),
-                    "Memory clock": get_clock('memory', card=card, format_freq=True),
-                    "Utilization": f'{get_gpu_usage(card=card)}%',
-                    "Voltage": f'{get_voltage(card=card)}V',
-                    "Power": f'{power_stats["average"]}W',
-                    "[italic]Limit": f'{power_stats["limit"]}W',
-                    "[italic]Default": f'{power_stats["default"]}W',
-                    "[italic]Capability": f'{power_stats["capability"]}W',
-                    "Fan RPM": f'{get_fan_rpm(card=card)}',
-                    "Edge temp": f"{get_temp_stat(name='edge', card=card)}C",
-                    "Junction temp": f"{get_temp_stat(name='junction', card=card)}C",
-                    "Memory temp": f"{get_temp_stat(name='mem', card=card)}C"}
+            self.data = self.get_column_data_mapping(card)
             # handle the table data appopriately
             # if needs populated anew or updated
             if self.table_needs_init:
@@ -167,10 +177,11 @@ class GPUStatsWidget(Static):
             self.table_needs_init = False
 
 
-class AMDGPUStats(App):
+class app(App):  # pylint: disable=invalid-name
     """Textual-based tool to show AMDGPU statistics."""
 
-    # apply stylesheet
+    # apply stylesheet; this is watched/dynamically reloaded
+    # can be edited (in installation dir) and seen live
     CSS_PATH = 'style.css'
 
     # set the title - same as the class, but with spaces
@@ -179,23 +190,25 @@ class AMDGPUStats(App):
     # setup keybinds
     BINDINGS = [
         Binding("c", "custom_dark", "Colors"),
-        Binding("l", "custom_log", "Logs"),
+        Binding("t", "custom_tab", "Tab switch"),
         Binding("s", "custom_screenshot", "Screenshot"),
         Binding("q", "quit", "Quit")
     ]
+
+    # create an instance of the stats widget with all cards
     stats_widget = GPUStatsWidget(cards=AMDGPU_CARDS,
                                   name="stats_widget")
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header(show_clock=True)
-        yield Footer()
         yield Container(self.stats_widget)
+        yield Footer()
 
     def action_custom_dark(self) -> None:
         """An action to toggle dark mode.
 
-        Wraps 'action_toggle_dark' with logging and a refresh"""
+        Wraps 'action_toggle_dark' with our logging"""
         self.app.dark = not self.app.dark
         self.update_log(f"[bold]Dark side: [italic]{self.app.dark}")
 
@@ -212,8 +225,8 @@ class AMDGPUStats(App):
         self.screen.mount(Notification(message))
         self.update_log(message)
 
-    def action_custom_log(self) -> None:
-        """Toggle between the main screen and the LogScreen."""
+    def action_custom_tab(self) -> None:
+        """Toggle between the 'Stats' and 'Logs' tabs"""
         if self.stats_widget.tabbed_container.active == "tab_stats":
             self.stats_widget.tabbed_container.active = 'tab_logs'
         else:
@@ -222,12 +235,3 @@ class AMDGPUStats(App):
     def update_log(self, message: str) -> None:
         """Update the TextLog widget with a new message."""
         self.stats_widget.text_log.write(message)
-
-
-def start() -> None:
-    '''Spawns the textual UI only during CLI invocation / after argparse'''
-    if len(AMDGPU_CARDS) > 0:
-        app = AMDGPUStats(watch_css=True)
-        app.run()
-    else:
-        sys.exit('Could not find an AMD GPU, exiting.')
