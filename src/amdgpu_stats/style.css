@@ -40,3 +40,23 @@ Header {
     content-align: center middle;
     background: $panel;
 }
+
+Footer {
+    background: #073b61;
+    dock: bottom;
+    height: 1;
+}
+
+.footer--highlight {
+    background: #81a1c1;
+    color: #434c5e;
+}
+
+.footer--highlight-key {
+    background: #88c0d0;
+    color: #434c5e;
+}
+
+.footer--key {
+    background: #004578;
+}
