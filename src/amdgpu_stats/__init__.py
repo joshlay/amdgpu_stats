@@ -18,6 +18,7 @@ def check_for_cards() -> bool:
 
 
 def textual_run() -> None:
+    """runs the AMD GPU Stats TUI; called only when in an interactive shell"""
     if check_for_cards():
         AMDGPUStats = app(watch_css=True)
         AMDGPUStats.run()
