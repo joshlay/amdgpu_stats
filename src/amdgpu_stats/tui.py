@@ -152,10 +152,6 @@ class GPUStatsWidget(Static):
     async def get_stats(self):
         '''Function to fetch stats / update the table for each AMD GPU found'''
         for card in self.cards:
-            # annoyingly, must retain the styling used w/ the cols above
-            # otherwise stats won't update
-            #   noticed when fiddling 'style' below between new/update 'Text'
-            # should store their IDs on creation and map those instead
             self.data = self.get_column_data_mapping(card)
             # handle the table data appopriately
             # if needs populated anew or updated
