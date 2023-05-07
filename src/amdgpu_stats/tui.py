@@ -121,7 +121,7 @@ class GPUStatsWidget(Static):
                                      classes='stat_table')
         self.tabbed_container = TabbedContent()
 
-    async def on_mount(self) -> None:
+    def on_mount(self) -> None:
         '''Fires when stats widget 'mounted', behaves like on first showing'''
         self.update_log("[bold green]App started, logging begin!")
         self.update_log(f"[bold]Discovered AMD GPUs: [/]{list(AMDGPU_CARDS)}")
@@ -183,7 +183,7 @@ class app(App):  # pylint: disable=invalid-name
 
     # set the title - same as the class, but with spaces
     TITLE = 'AMD GPU Stats'
-    SUB_TITLE = f"Discovered cards: {list(AMDGPU_CARDS)}"
+    SUB_TITLE = ''
 
     # setup keybinds
     BINDINGS = [
@@ -211,7 +211,7 @@ class app(App):  # pylint: disable=invalid-name
         self.app.dark = not self.app.dark
         self.update_log(f"[bold]Dark side: [italic]{self.app.dark}")
 
-    async def action_custom_screenshot(self, screen_dir: str = '/tmp') -> None:
+    def action_custom_screenshot(self, screen_dir: str = '/tmp') -> None:
         """Action that fires when the user presses 's' for a screenshot"""
         # construct the screenshot elements: name (w/ ISO timestamp) + path
         screen_name = ('amdgpu_stats_' +
@@ -224,15 +224,28 @@ class app(App):  # pylint: disable=invalid-name
         self.screen.mount(Notification(message))
         self.update_log(message)
 
-    def action_custom_tab(self) -> None:
-        """Toggle between the 'Stats' and 'Logs' tabs"""
-        if self.stats_widget.tabbed_container.active == "tab_stats":
-            self.stats_widget.tabbed_container.active = 'tab_logs'
-            self.sub_title = 'Logs'
-        else:
-            self.stats_widget.tabbed_container.active = 'tab_stats'
-            self.sub_title = f'Discovered cards: {list(AMDGPU_CARDS)}'
-
     def update_log(self, message: str) -> None:
         """Update the TextLog widget with a new message."""
         self.stats_widget.text_log.write(message)
+
+    def action_custom_tab(self) -> None:
+        """Toggle between the 'Stats' and 'Logs' tabs"""
+        if self.stats_widget.tabbed_container.active == "tab_stats":
+            new_tab = 'tab_logs'
+        else:
+            new_tab = 'tab_stats'
+        self.stats_widget.tabbed_container.active = new_tab
+        # craft a 'tab activated' (changed) event
+        # used to set the subtitle via event handling
+        event = TabbedContent.TabActivated(tabbed_content=self.stats_widget.tabbed_container,
+                                           tab=new_tab)
+        self.on_tabbed_content_tab_activated(event)
+
+    def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated):
+        """Listens to 'TabActivated' event, sets subtitle"""
+        # if self.tabbed_container.active == "tab_logs":
+        active_title = event.tabbed_content.active.title().replace('Tab_', '')
+        if event.tabbed_content.active == "tab_logs":
+            self.sub_title = active_title  # pylint: disable=attribute-defined-outside-init
+        elif event.tabbed_content.active == "tab_stats":
+            self.sub_title = f'{active_title}: {list(AMDGPU_CARDS)}'  # pylint: disable=attribute-defined-outside-init
