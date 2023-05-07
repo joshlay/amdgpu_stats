@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import Optional
 
 from rich.text import Text
+from textual import work
 from textual.binding import Binding
 from textual.app import App, ComposeResult
 from textual.containers import Container
@@ -109,7 +110,6 @@ class GPUStatsWidget(Static):
 
     def __init__(self, *args, cards=None, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.cards = cards
         self.text_log = TextLog(highlight=True,
                                 markup=True,
@@ -123,10 +123,14 @@ class GPUStatsWidget(Static):
 
     async def on_mount(self) -> None:
         '''Fires when stats widget 'mounted', behaves like on first showing'''
+        self.update_log("[bold green]App started, logging begin!")
+        self.update_log(f"[bold]Discovered AMD GPUs: [/]{list(AMDGPU_CARDS)}")
         # construct the table columns
         columns = list(self.get_column_data_mapping(None).keys())
+        self.update_log('[bold]Stats table columns:')
         for column in columns:
             self.stats_table.add_column(label=column, key=column)
+            self.update_log(f'  - "{column}"')
         # do a one-off stat collection, populate table before the interval
         self.get_stats()
         # stand up the stat-collecting interval, twice per second
@@ -134,13 +138,9 @@ class GPUStatsWidget(Static):
 
     def compose(self) -> ComposeResult:
         """Create child widgets."""
-        self.update_log("[bold green]App started, logging begin!")
-        self.update_log(f"[bold]Discovered AMD GPUs: [/]{list(AMDGPU_CARDS)}")
-        # Add the TabbedContent widget
         with self.tabbed_container:
             with TabPane("Stats", id="tab_stats"):
                 yield self.stats_table
-                self.update_log('[bold]App: [/]created stats table')
             with TabPane("Logs", id="tab_logs"):
                 yield self.text_log
 
@@ -148,7 +148,8 @@ class GPUStatsWidget(Static):
         """Update the TextLog widget with a new message."""
         self.text_log.write(message)
 
-    def get_stats(self):
+    @work(exclusive=True)
+    async def get_stats(self):
         '''Function to fetch stats / update the table for each AMD GPU found'''
         for card in self.cards:
             # annoyingly, must retain the styling used w/ the cols above
@@ -166,7 +167,7 @@ class GPUStatsWidget(Static):
                 ]
                 self.stats_table.add_row(*styled_row, key=card)
                 hwmon_dir = AMDGPU_CARDS[card]
-                self.update_log(f"[bold]Table: [/]added row for '{card}', info dir: '{hwmon_dir}'")
+                self.update_log(f"[bold]Stats table: [/]added row for '{card}', info dir: '{hwmon_dir}'")
             else:
                 # Update existing rows, retaining styling/justification
                 for column, value in self.data.items():
@@ -186,6 +187,7 @@ class app(App):  # pylint: disable=invalid-name
 
     # set the title - same as the class, but with spaces
     TITLE = 'AMD GPU Stats'
+    SUB_TITLE = f"Discovered cards: {list(AMDGPU_CARDS)}"
 
     # setup keybinds
     BINDINGS = [
@@ -205,14 +207,15 @@ class app(App):  # pylint: disable=invalid-name
         yield Container(self.stats_widget)
         yield Footer()
 
-    def action_custom_dark(self) -> None:
+    @work(exclusive=True)
+    async def action_custom_dark(self) -> None:
         """An action to toggle dark mode.
 
         Wraps 'action_toggle_dark' with our logging"""
         self.app.dark = not self.app.dark
         self.update_log(f"[bold]Dark side: [italic]{self.app.dark}")
 
-    def action_custom_screenshot(self, screen_dir: str = '/tmp') -> None:
+    async def action_custom_screenshot(self, screen_dir: str = '/tmp') -> None:
         """Action that fires when the user presses 's' for a screenshot"""
         # construct the screenshot elements: name (w/ ISO timestamp) + path
         screen_name = ('amdgpu_stats_' +
@@ -229,8 +232,10 @@ class app(App):  # pylint: disable=invalid-name
         """Toggle between the 'Stats' and 'Logs' tabs"""
         if self.stats_widget.tabbed_container.active == "tab_stats":
             self.stats_widget.tabbed_container.active = 'tab_logs'
+            self.sub_title = 'Logs'
         else:
             self.stats_widget.tabbed_container.active = 'tab_stats'
+            self.sub_title = f'Discovered cards: {list(AMDGPU_CARDS)}'
 
     def update_log(self, message: str) -> None:
         """Update the TextLog widget with a new message."""
