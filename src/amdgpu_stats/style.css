@@ -7,6 +7,7 @@ GPUStatsWidget {
     width: 100%;
 /*    min-width: 50;*/
 }
+
 .logs {
     height: 1fr;
 }
@@ -21,6 +22,13 @@ Container {
 
 TabbedContent {
 /*    box-sizing: content-box;*/
+    height: 1fr;
+}
+
+TabPane {
+    padding: 0 1;
+    border-bottom: heavy $primary-background;
+    border-subtitle-color: $text-disabled;
     height: 1fr;
 }
 
@@ -59,4 +67,9 @@ Footer {
 
 .footer--key {
     background: #004578;
+}
+
+ScrollBar {
+    border-top: solid $panel-lighten-3;
+    border-bottom: solid $panel-lighten-3;
 }

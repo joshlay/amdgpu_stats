@@ -183,7 +183,8 @@ class app(App):  # pylint: disable=invalid-name
 
     # set the title - same as the class, but with spaces
     TITLE = 'AMD GPU Stats'
-    SUB_TITLE = ''
+    # set a default subtitle, will change with the active tab
+    SUB_TITLE = f'cards: {list(AMDGPU_CARDS)}'
 
     # setup keybinds
     BINDINGS = [
@@ -243,9 +244,8 @@ class app(App):  # pylint: disable=invalid-name
 
     def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated):
         """Listens to 'TabActivated' event, sets subtitle"""
-        # if self.tabbed_container.active == "tab_logs":
-        active_title = event.tabbed_content.active.title().replace('Tab_', '')
-        if event.tabbed_content.active == "tab_logs":
-            self.sub_title = active_title  # pylint: disable=attribute-defined-outside-init
-        elif event.tabbed_content.active == "tab_stats":
-            self.sub_title = f'{active_title}: {list(AMDGPU_CARDS)}'  # pylint: disable=attribute-defined-outside-init
+        active_tab = event.tabbed_content.active.replace('tab_', '')
+        if active_tab == "logs":
+            self.sub_title = active_tab  # pylint: disable=attribute-defined-outside-init
+        elif active_tab == "stats":
+            self.sub_title = f'cards: {list(AMDGPU_CARDS)}'  # pylint: disable=attribute-defined-outside-init
