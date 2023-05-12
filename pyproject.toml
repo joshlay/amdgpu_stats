@@ -1,12 +1,23 @@
 [tool.poetry]
 name = "amdgpu-stats"
-version = "0.1.16"
+version = "0.1.17"
 description = "A module/TUI for AMD GPU statistics"
 authors = ["Josh Lay <pypi@jlay.io>"]
 repository = "https://github.com/joshlay/amdgpu_stats"
 license = "MIT"
 readme = "README.md"
 documentation = "https://amdgpu-stats.readthedocs.io/en/latest/"
+classifiers = [
+    "Environment :: Console",
+    "Environment :: GPU",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: System Administrators",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
