@@ -7,7 +7,7 @@ A Python module/TUI for AMD GPU statistics
 Tested _only_ on `RX6000` series cards; APUs and more _may_ be supported. Please file an issue if finding incompatibility!
 
 ## Installation
-```
+```bash
 pip install amdgpu-stats
 ```
 To use the _TUI_, run `amdgpu-stats` in your terminal of choice. For the _module_, see below!
@@ -15,7 +15,7 @@ To use the _TUI_, run `amdgpu-stats` in your terminal of choice. For the _module
 ## Module
 
 Introduction:
-```
+```python
 In [1]: import amdgpu_stats.utils
 
 In [2]: amdgpu_stats.utils.AMDGPU_CARDS
