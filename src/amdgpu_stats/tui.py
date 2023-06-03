@@ -22,11 +22,13 @@ from rich.text import Text
 from textual import work
 from textual.binding import Binding
 from textual.app import App, ComposeResult
-from textual.containers import Container
+from textual.containers import Container, Vertical
 from textual.widgets import (
         DataTable,
         Footer,
         Header,
+        Label,
+        ProgressBar,
         Static,
         TabbedContent,
         TabPane,
@@ -107,6 +109,19 @@ class GPUStatsWidget(Static):
     timer_stats = None
     # mark the table as needing initialization (with rows)
     table_needs_init = True
+    card_bars = []
+    for card in AMDGPU_CARDS:
+        card_bars.append((card,
+                           ProgressBar(total=100.0,
+                                       show_eta=False,
+                                       id='bar_' + card + '_util'),
+                           ProgressBar(total=100.0,
+                                       show_eta=False,
+                                       id='bar_' + card + '_poweravg'),
+                           ProgressBar(total=100.0,
+                                       show_eta=False,
+                                       id='bar_' + card + '_powercap'))
+                          )
 
     def __init__(self, *args, cards=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -129,8 +144,8 @@ class GPUStatsWidget(Static):
         columns = list(self.get_column_data_mapping(None).keys())
         for column in columns:
             if column in ['Limit', 'Default', 'Capability']:
-                label = '[italic]' + column
-                self.stats_table.add_column(label=label, key=column)
+                self.stats_table.add_column(label='[italic]' + column,
+                                            key=column)
             else:
                 self.stats_table.add_column(label=column, key=column)
         #    self.update_log(f'  - "{column}"')
@@ -146,6 +161,17 @@ class GPUStatsWidget(Static):
         with self.tabbed_container:
             with TabPane("Stats", id="tab_stats"):
                 yield self.stats_table
+            with TabPane("Graphs", id="tab_graphs", classes="tab_graphs"):
+                for card, util_bar, power_bar_avg, power_bar_cap in self.card_bars:
+                    yield Vertical(
+                            Label(f'[bold]{card}'),
+                            Label('Core:'),
+                            util_bar,
+                            Label('Power [italic](limit)[/i]:'),
+                            power_bar_avg,
+                            Label('Power [italic](capability)[/i]:'),
+                            power_bar_cap,
+                            classes='graph_section')
             with TabPane("Logs", id="tab_logs"):
                 yield self.text_log
 
@@ -158,6 +184,12 @@ class GPUStatsWidget(Static):
         '''Function to fetch stats / update the table for each AMD GPU found'''
         for card in self.cards:
             self.data = self.get_column_data_mapping(card)
+            # Update usage bars
+            self.query_one(f'#bar_{card}_util').update(total=100, progress=float(self.data['Utilization'].replace('%', '')))
+            self.query_one(f'#bar_{card}_poweravg').update(total=float(self.data['Limit'].replace('W', '')),
+                                                        progress=float(self.data['Power'].replace('W', '')))
+            self.query_one(f'#bar_{card}_powercap').update(total=float(self.data['Capability'].replace('W', '')),
+                                                        progress=float(self.data['Power'].replace('W', '')))
             # handle the table data appopriately
             # if needs populated anew or updated
             if self.table_needs_init:
@@ -254,7 +286,10 @@ class app(App):  # pylint: disable=invalid-name
 
     def action_custom_tab(self) -> None:
         """Toggle between the 'Stats' and 'Logs' tabs"""
+        # walk/cycle the tabs
         if self.stats_widget.tabbed_container.active == "tab_stats":
+            new_tab = 'tab_graphs'
+        elif self.stats_widget.tabbed_container.active == "tab_graphs":
             new_tab = 'tab_logs'
         else:
             new_tab = 'tab_stats'

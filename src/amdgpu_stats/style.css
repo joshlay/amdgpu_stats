@@ -16,6 +16,14 @@ GPUStatsWidget {
     width: 100%;
 }
 
+.tab_graphs {
+    layout: grid;
+}
+
+.graph_section {
+    box-sizing: content-box;
+}
+
 Container {
     height: 1fr;
 }
