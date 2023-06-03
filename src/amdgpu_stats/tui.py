@@ -134,7 +134,7 @@ class GPUStatsWidget(Static):
             else:
                 self.stats_table.add_column(label=column, key=column)
         #    self.update_log(f'  - "{column}"')
-        self.update_log(f'[bold]Stat columns:')
+        self.update_log('[bold]Stat columns:')
         self.update_log(dump(data=columns, default_flow_style=False, sort_keys=True))
         # do a one-off stat collection, populate table before the interval
         self.get_stats()
