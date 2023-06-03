@@ -16,6 +16,7 @@ Functions:
 # pylint: disable=line-too-long
 from datetime import datetime
 from typing import Optional
+from yaml import dump
 
 from rich.text import Text
 from textual import work
@@ -23,13 +24,13 @@ from textual.binding import Binding
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.widgets import (
-        Header,
-        Footer,
-        Static,
-        TextLog,
         DataTable,
+        Footer,
+        Header,
+        Static,
         TabbedContent,
         TabPane,
+        TextLog,
         )
 
 from .utils import (
@@ -58,7 +59,6 @@ class Notification(Static):
         '''Fires when notification is clicked, removes the widget'''
         self.remove()
 
-
 class GPUStatsWidget(Static):
     """The main stats widget."""
 
@@ -75,9 +75,9 @@ class GPUStatsWidget(Static):
                 "Utilization": "",
                 "Voltage": "",
                 "Power": "",
-                "[italic]Limit": "",
-                "[italic]Default": "",
-                "[italic]Capability": "",
+                "Limit": "",
+                "Default": "",
+                "Capability": "",
                 "Fan RPM": "",
                 "Edge temp": "",
                 "Junction temp": "",
@@ -90,9 +90,9 @@ class GPUStatsWidget(Static):
             "Utilization": f'{get_gpu_usage(card=card)}%',
             "Voltage": f'{get_voltage(card=card)}V',
             "Power": f'{get_power_stats(card=card)["average"]}W',
-            "[italic]Limit": f'{get_power_stats(card=card)["limit"]}W',
-            "[italic]Default": f'{get_power_stats(card=card)["default"]}W',
-            "[italic]Capability": f'{get_power_stats(card=card)["capability"]}W',
+            "Limit": f'{get_power_stats(card=card)["limit"]}W',
+            "Default": f'{get_power_stats(card=card)["default"]}W',
+            "Capability": f'{get_power_stats(card=card)["capability"]}W',
             "Fan RPM": f'{get_fan_rpm(card=card)}',
             "Edge temp": f"{get_temp_stat(name='edge', card=card)}C",
             "Junction temp": f"{get_temp_stat(name='junction', card=card)}C",
@@ -124,14 +124,18 @@ class GPUStatsWidget(Static):
 
     def on_mount(self) -> None:
         '''Fires when stats widget 'mounted', behaves like on first showing'''
-        self.update_log("[bold green]App started, logging begin!")
-        self.update_log(f"[bold]Discovered AMD GPUs: [/]{list(AMDGPU_CARDS)}")
+        self.update_log("[bold green]App started, logging begin!\n")
         # construct the table columns
         columns = list(self.get_column_data_mapping(None).keys())
-        self.update_log('[bold]Stats table columns:')
         for column in columns:
-            self.stats_table.add_column(label=column, key=column)
-            self.update_log(f'  - "{column}"')
+            if column in ['Limit', 'Default', 'Capability']:
+                label = '[italic]' + column
+                self.stats_table.add_column(label=label, key=column)
+            else:
+                self.stats_table.add_column(label=column, key=column)
+        #    self.update_log(f'  - "{column}"')
+        self.update_log(f'[bold]Stat columns:')
+        self.update_log(dump(data=columns, default_flow_style=False, sort_keys=True))
         # do a one-off stat collection, populate table before the interval
         self.get_stats()
         # stand up the stat-collecting interval, twice per second
@@ -164,7 +168,7 @@ class GPUStatsWidget(Static):
                 ]
                 self.stats_table.add_row(*styled_row, key=card)
                 hwmon_dir = AMDGPU_CARDS[card]
-                self.update_log(f"[bold]Stats table: [/]added row for '{card}', info dir: '{hwmon_dir}'")
+                self.update_log(f"Added row for '{card}', stats dir: '{hwmon_dir}'")
             else:
                 # Update existing rows, retaining styling/justification
                 for column, value in self.data.items():
