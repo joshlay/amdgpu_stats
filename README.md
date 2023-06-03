@@ -1,4 +1,5 @@
 # amdgpu_stats
+![pylint](https://github.com/joshlay/amdgpu_stats/actions/workflows/pylint.yml/badge.svg)
 
 A Python module/TUI for AMD GPU statistics
 
