@@ -119,6 +119,7 @@ class GPUStatsWidget(Static):
                                      show_cursor=True,
                                      name='stats_table',
                                      classes='stat_table')
+
         self.tabbed_container = TabbedContent()
 
     def on_mount(self) -> None:
@@ -191,6 +192,10 @@ class app(App):  # pylint: disable=invalid-name
         Binding("c", "custom_dark", "Colors"),
         Binding("t", "custom_tab", "Tab switch"),
         Binding("s", "custom_screenshot", "Screenshot"),
+        Binding("up,k", "custom_logscroll('up')", "Scroll Logs", ),
+        Binding("down,j", "custom_logscroll('down')", "Scroll Logs"),
+        Binding("pageup", "custom_logscroll('pageup')", "", show=False),
+        Binding("pagedown", "custom_logscroll('pagedown')", "", show=False),
         Binding("q", "quit", "Quit")
     ]
 
@@ -212,7 +217,21 @@ class app(App):  # pylint: disable=invalid-name
         self.app.dark = not self.app.dark
         self.update_log(f"[bold]Dark side: [italic]{self.app.dark}")
 
-    def action_custom_screenshot(self, screen_dir: str = '/tmp') -> None:
+    async def action_custom_logscroll(self, direction: str) -> None:
+        """Action that handles scrolling of the logging widget
+
+        'j', 'k', 'Up'/'Down' arrows handle line-by-line
+        Page Up/Down do... pages"""
+        if direction == "pageup":
+            self.stats_widget.text_log.scroll_page_up(animate=True, speed=None, duration=0.175)
+        elif direction == "up":
+            self.stats_widget.text_log.scroll_up(animate=False)
+        elif direction == "pagedown":
+            self.stats_widget.text_log.scroll_page_down(animate=True, speed=None, duration=0.175)
+        elif direction == "down":
+            self.stats_widget.text_log.scroll_down(animate=False)
+
+    async def action_custom_screenshot(self, screen_dir: str = '/tmp') -> None:
         """Action that fires when the user presses 's' for a screenshot"""
         # construct the screenshot elements: name (w/ ISO timestamp) + path
         screen_name = ('amdgpu_stats_' +
