@@ -1,2 +1,3 @@
 textual>=0.16.0
 humanfriendly==10.0
+pyyaml==6.0
