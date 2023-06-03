@@ -70,6 +70,6 @@ Footer {
 }
 
 ScrollBar {
-    border-top: solid $panel-lighten-3;
-    border-bottom: solid $panel-lighten-3;
+    border-top: inner $panel-lighten-3;
+    border-bottom: inner $panel-lighten-3;
 }
