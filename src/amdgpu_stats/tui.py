@@ -47,20 +47,6 @@ from .utils import (
 # rich markup reference:
 #    https://rich.readthedocs.io/en/stable/markup.html
 
-
-class Notification(Static):
-    '''Self-removing notification widget'''
-
-    def on_mount(self) -> None:
-        '''On the creation/display of the notification...
-
-        Creates a timer to remove itself in 3 seconds'''
-        self.set_timer(3, self.remove)
-
-    def on_click(self) -> None:
-        '''Fires when notification is clicked, removes the widget'''
-        self.remove()
-
 class GPUStatsWidget(Static):
     """The main stats widget."""
 
@@ -69,6 +55,36 @@ class GPUStatsWidget(Static):
 
         Columns are derived from keys, and values provide measurements
         *Measurements require `card`*'''
+        # handle varying stats (among cards) independently
+        #
+        # first, a subset of the power stats - gather them all
+        # ... then map to a smaller dict that's used to update the table
+        _all_pwr = get_power_stats(card=card)
+        power_stats = {
+                "usage": _all_pwr["average"],
+                "lim": _all_pwr["limit"],
+                "def": _all_pwr["default"],
+                "cap": _all_pwr["capability"],
+                }
+
+        temp_stats = {
+                "edge": get_temp_stat(name='edge', card=card),
+                "junction": get_temp_stat(name='junction', card=card),
+                "memory": get_temp_stat(name='mem', card=card)
+                }
+
+        # 'humanize' values, add units
+        for power_stat, val in power_stats.items():
+            if val == None:
+                power_stats[power_stat] = 'Unknown'
+            else:
+                power_stats[power_stat] = str(val) + 'W'
+        for temp_stat, val in temp_stats.items():
+            if val == None:
+                temp_stats[temp_stat] = 'N/A'
+            else:
+                temp_stats[temp_stat] = str(val) + 'C'
+
         if card is None:
             return {
                 "Card": "",
@@ -91,14 +107,14 @@ class GPUStatsWidget(Static):
             "Memory clock": get_clock('memory', card=card, format_freq=True),
             "Utilization": f'{get_gpu_usage(card=card)}%',
             "Voltage": f'{get_voltage(card=card)}V',
-            "Power": f'{get_power_stats(card=card)["average"]}W',
-            "Limit": f'{get_power_stats(card=card)["limit"]}W',
-            "Default": f'{get_power_stats(card=card)["default"]}W',
-            "Capability": f'{get_power_stats(card=card)["capability"]}W',
+            "Power": power_stats['usage'],
+            "Limit": power_stats['lim'],
+            "Default": power_stats['def'],
+            "Capability": power_stats['cap'],
             "Fan RPM": f'{get_fan_rpm(card=card)}',
-            "Edge temp": f"{get_temp_stat(name='edge', card=card)}C",
-            "Junction temp": f"{get_temp_stat(name='junction', card=card)}C",
-            "Memory temp": f"{get_temp_stat(name='mem', card=card)}C"
+            "Edge temp": temp_stats['edge'],
+            "Junction temp": temp_stats['junction'],
+            "Memory temp": temp_stats['memory']
         }
 
     # initialize empty/default instance vars and objects
@@ -109,19 +125,6 @@ class GPUStatsWidget(Static):
     timer_stats = None
     # mark the table as needing initialization (with rows)
     table_needs_init = True
-    card_bars = []
-    for card in AMDGPU_CARDS:
-        card_bars.append((card,
-                           ProgressBar(total=100.0,
-                                       show_eta=False,
-                                       id='bar_' + card + '_util'),
-                           ProgressBar(total=100.0,
-                                       show_eta=False,
-                                       id='bar_' + card + '_poweravg'),
-                           ProgressBar(total=100.0,
-                                       show_eta=False,
-                                       id='bar_' + card + '_powercap'))
-                          )
 
     def __init__(self, *args, cards=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -154,7 +157,7 @@ class GPUStatsWidget(Static):
         # do a one-off stat collection, populate table before the interval
         self.get_stats()
         # stand up the stat-collecting interval, twice per second
-        self.timer_stats = self.set_interval(0.5, self.get_stats)
+        self.timer_stats = self.set_interval(1.0, self.get_stats)
 
     def compose(self) -> ComposeResult:
         """Create child widgets."""
@@ -162,16 +165,14 @@ class GPUStatsWidget(Static):
             with TabPane("Stats", id="tab_stats"):
                 yield self.stats_table
             with TabPane("Graphs", id="tab_graphs", classes="tab_graphs"):
-                for card, util_bar, power_bar_avg, power_bar_cap in self.card_bars:
+                for card in AMDGPU_CARDS:
                     yield Vertical(
                             Label(f'[bold]{card}'),
                             Label('Core:'),
-                            util_bar,
-                            Label('Power [italic](limit)[/i]:'),
-                            power_bar_avg,
-                            Label('Power [italic](capability)[/i]:'),
-                            power_bar_cap,
-                            classes='graph_section')
+                            ProgressBar(total=100.0,
+                                        show_eta=False,
+                                        id='bar_' + card + '_util'),
+                            )
             with TabPane("Logs", id="tab_logs"):
                 yield self.text_log
 
@@ -185,11 +186,8 @@ class GPUStatsWidget(Static):
         for card in self.cards:
             self.data = self.get_column_data_mapping(card)
             # Update usage bars
-            self.query_one(f'#bar_{card}_util').update(total=100, progress=float(self.data['Utilization'].replace('%', '')))
-            self.query_one(f'#bar_{card}_poweravg').update(total=float(self.data['Limit'].replace('W', '')),
-                                                        progress=float(self.data['Power'].replace('W', '')))
-            self.query_one(f'#bar_{card}_powercap').update(total=float(self.data['Capability'].replace('W', '')),
-                                                        progress=float(self.data['Power'].replace('W', '')))
+            if self.data['Utilization'] is not None:
+                self.query_one(f'#bar_{card}_util').update(total=100, progress=float(self.data['Utilization'].replace('%', '')))
             # handle the table data appopriately
             # if needs populated anew or updated
             if self.table_needs_init:
@@ -276,8 +274,8 @@ class app(App):  # pylint: disable=invalid-name
         # take the screenshot, recording the path for logging/notification
         outpath = self.save_screenshot(path=screen_dir, filename=screen_name)
         # construct the log/notification message, then show it
-        message = f"[bold]Screenshot saved to [green]'{outpath}'"
-        self.screen.mount(Notification(message))
+        message = f"[bold]Path: [/]'[green]{outpath}[/]'"
+        self.notify(message, title='Screenshot captured', timeout=3.0)
         self.update_log(message)
 
     def update_log(self, message: str) -> None:
