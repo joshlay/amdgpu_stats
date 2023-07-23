@@ -40,7 +40,7 @@ def find_cards() -> dict:
                 _card = hwmon_name_file.split('/')[4]
                 _hwmon_dir = path.dirname(hwmon_name_file)
                 cards[_card] = _hwmon_dir
-    return cards
+    return dict(sorted(cards.items()))
 
 
 # discover all available AMD GPUs
@@ -94,11 +94,15 @@ def read_stat(file: str, stat_type: Optional[str] = None) -> str:
     Returns:
         str: Statistics from `file`. If `stat_type='power'`, will convert mW to Watts
     """
-    with open(file, "r", encoding="utf-8") as _fh:
-        data = _fh.read().strip()
-        if stat_type == 'power':
-            data = int(int(data) / 1000000)
-    return data
+    if path.exists(file):
+        with open(file, "r", encoding="utf-8") as _fh:
+            data = _fh.read().strip()
+            if stat_type == 'power':
+                data = int(int(data) / 1000000)
+            return data
+    else:
+        return None
+
 
 
 def format_frequency(frequency_hz: int) -> str:
@@ -138,7 +142,7 @@ def get_power_stats(card: Optional[str] = None) -> dict:
             "capability": read_stat(path.join(hwmon_dir, "power1_cap_max"), stat_type='power'),
             "default": read_stat(path.join(hwmon_dir, "power1_cap_default"), stat_type='power')}
 
-    if _pwr['limit'] != 0:
+    if _pwr['limit'] != None:
         _pwr['limit_pct'] = round((_pwr['average'] / _pwr['limit']) * 100, 1)
 
     return _pwr
@@ -188,6 +192,8 @@ def get_clock(domain: str, card: Optional[str] = None, format_freq: Optional[boo
         Union[int, str]: The clock value for the specified domain.
                          If format_freq is True, a formatted string with Hz/MHz/GHz
                          will be returned instead of an int
+
+        None:            The clock domain is invalid for *card*
     """
     # verify card -- is it AMD, do we know the hwmon directory?
     card = validate_card(card)
@@ -200,9 +206,13 @@ def get_clock(domain: str, card: Optional[str] = None, format_freq: Optional[boo
     elif domain == 'memory':
         clock_file = path.join(hwmon_dir, "freq2_input")
     # handle output processing
-    if format_freq:
-        return format_frequency(int(read_stat(clock_file)))
-    return int(read_stat(clock_file))
+    # check if clock file exists, if not - return 'none'
+    if path.exists(clock_file):
+        if format_freq:
+            return format_frequency(int(read_stat(clock_file)))
+        return int(read_stat(clock_file))
+    else:
+        return None
 
 
 def get_voltage(card: Optional[str] = None) -> float:
@@ -232,13 +242,18 @@ def get_fan_rpm(card: Optional[str] = None) -> int:
         ValueError: If *no* AMD cards are found, or `card` is not one of them.
             Determined with `AMDGPU_CARDS`
 
+
     Returns:
         int: The *current* fan RPM
+        None: If *card* does not have a fan
     """
     # verify card -- is it AMD, do we know the hwmon directory?
     card = validate_card(card)
     hwmon_dir = AMDGPU_CARDS[card]
-    return int(read_stat(path.join(hwmon_dir, "fan1_input")))
+    _val = read_stat(path.join(hwmon_dir, "fan1_input"))
+    if _val != None:
+        _val = int(_val)
+    return _val
 
 
 def get_fan_target(card: Optional[str] = None) -> int:
@@ -333,7 +348,7 @@ def get_temp_stat(name: str, card: Optional[str] = None) -> dict:
 
     # now that we know the temperature nodes/types for 'card', check request
     if name not in temp_files:
-        raise ValueError(f'{name} does not appear to be valid, temp nodes: {list(temp_files.keys())}')
+        return None
 
     # if the requested temperature node was found, read it / convert to C
     return int(int(read_stat(temp_files[name])) // 1000)
