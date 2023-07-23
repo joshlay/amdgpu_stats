@@ -142,7 +142,7 @@ def get_power_stats(card: Optional[str] = None) -> dict:
             "capability": read_stat(path.join(hwmon_dir, "power1_cap_max"), stat_type='power'),
             "default": read_stat(path.join(hwmon_dir, "power1_cap_default"), stat_type='power')}
 
-    if _pwr['limit'] != None:
+    if _pwr['limit'] is not None:
         _pwr['limit_pct'] = round((_pwr['average'] / _pwr['limit']) * 100, 1)
 
     return _pwr
@@ -211,8 +211,7 @@ def get_clock(domain: str, card: Optional[str] = None, format_freq: Optional[boo
         if format_freq:
             return format_frequency(int(read_stat(clock_file)))
         return int(read_stat(clock_file))
-    else:
-        return None
+    return None
 
 
 def get_voltage(card: Optional[str] = None) -> float:
@@ -251,7 +250,7 @@ def get_fan_rpm(card: Optional[str] = None) -> int:
     card = validate_card(card)
     hwmon_dir = AMDGPU_CARDS[card]
     _val = read_stat(path.join(hwmon_dir, "fan1_input"))
-    if _val != None:
+    if _val is not None:
         _val = int(_val)
     return _val
 

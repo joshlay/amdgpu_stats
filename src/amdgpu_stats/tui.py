@@ -76,12 +76,12 @@ class GPUStatsWidget(Static):
 
         # 'humanize' values, add units
         for power_stat, val in power_stats.items():
-            if val == None:
+            if val is None:
                 power_stats[power_stat] = 'Unknown'
             else:
                 power_stats[power_stat] = str(val) + 'W'
         for temp_stat, val in temp_stats.items():
-            if val == None:
+            if val is None:
                 temp_stats[temp_stat] = 'N/A'
             else:
                 temp_stats[temp_stat] = str(val) + 'C'
