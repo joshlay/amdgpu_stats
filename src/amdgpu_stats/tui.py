@@ -250,7 +250,10 @@ class app(App):  # pylint: disable=invalid-name
 
         Wraps 'action_toggle_dark' with our logging"""
         self.app.dark = not self.app.dark
-        self.update_log(f"[bold]Dark side: [italic]{self.app.dark}")
+        # inline conditional due to how Textual doesn't pretty notifs. for us like TextLog
+        message = f"[bold]Dark side: [italic][{'green' if self.app.dark else 'red'}]{self.app.dark}"
+        self.notify(message)
+        self.update_log(message)
 
     async def action_custom_logscroll(self, direction: str) -> None:
         """Action that handles scrolling of the logging widget
