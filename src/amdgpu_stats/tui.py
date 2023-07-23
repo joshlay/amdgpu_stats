@@ -59,6 +59,7 @@ class GPUStatsWidget(Static):
         #
         # first, a subset of the power stats - gather them all
         # ... then map to a smaller dict that's used to update the table
+        # TODO: remove second dictionary, walk the one we have. some rigidity in expected names.
         _all_pwr = get_power_stats(card=card)
         power_stats = {
                 "usage": _all_pwr["average"],
