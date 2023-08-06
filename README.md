@@ -1,11 +1,10 @@
 # amdgpu_stats
-![pylint](https://github.com/joshlay/amdgpu_stats/actions/workflows/pylint.yml/badge.svg)
 
 A Python module/TUI for AMD GPU statistics
 
-![Screenshot of the main stats table](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/main.svg "Main screen")
-![Screenshot of the 'graphing' scroll bars](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/graphs.svg "Graphs")
-![Screenshot of the 'Logs' tab pane](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/logs.svg "Logs")
+![Screenshot of the main stats table](https://git.jlay.dev/jlay/amdgpu_stats/raw/branch/master/screens/main.svg "Main screen")
+![Screenshot of the 'graphing' scroll bars](https://git.jlay.dev/jlay/amdgpu_stats/raw/branch/master/screens/graphs.svg "Graphs")
+![Screenshot of the 'Logs' tab pane](https://git.jlay.dev/jlay/amdgpu_stats/raw/branch/master/screens/logs.svg "Logs")
 
 Tested _only_ on `RX6000` series cards; APUs and more _may_ be supported. Please file an issue if finding incompatibility!
 
