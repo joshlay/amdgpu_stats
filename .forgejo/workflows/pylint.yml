@@ -13,9 +13,9 @@ jobs:
     steps:
     - name: Install package dependencies
       run: |
+        echo "Making DNF more performant with these directives:"
         echo -e 'max_parallel_downloads=20\ndeltarpm=False\nfastestmirror=False' | tee -a /etc/dnf/dnf.conf
-        dnf -yq install nodejs git python3-pip python3-virtualenv python3-pylint-venv
-        dnf clean all
+        dnf -yq install nodejs git python3-pip python3-virtualenv
 #    - name: "Set up Python ${{ matrix.python-version }}"
 #      uses: https://github.com/actions/setup-python@v3
 #      with:
@@ -25,8 +25,10 @@ jobs:
       run: |
         python3 -m venv venv
         source venv/bin/activate
-        python3 -m pip install --upgrade pip pylint
-        python3 -m pip install -r requirements.txt
+        python3 -m pip install --upgrade pip
+        python3 -m pip install --upgrade wheel
+        python3 -m pip install pylint
+        python3 -m pip install --no-compile -r requirements.txt
     - name: Analysing the code with pylint
       run: |
         source venv/bin/activate
