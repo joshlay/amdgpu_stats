@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "amdgpu-stats"
-version = "0.1.19"
+version = "0.1.20"
 description = "A module/TUI for AMD GPU statistics"
 authors = ["Josh Lay <pypi@jlay.io>"]
-repository = "https://github.com/joshlay/amdgpu_stats"
+repository = "https://git.jlay.dev/jlay/amdgpu_stats"
 license = "MIT"
 readme = "README.md"
 documentation = "https://amdgpu-stats.readthedocs.io/en/latest/"
@@ -22,9 +22,8 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-textual = ">=0.30.0"
+textual = ">=0.32.0"
 humanfriendly = ">=10.0"
-pyyaml = "^6.0"
 
 [tool.poetry.scripts]
 amdgpu-stats = "amdgpu_stats:textual_run"

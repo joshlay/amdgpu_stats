@@ -16,7 +16,6 @@ Functions:
 # pylint: disable=line-too-long
 from datetime import datetime
 from typing import Optional
-from yaml import dump
 
 from rich.text import Text
 from textual import work
@@ -32,7 +31,7 @@ from textual.widgets import (
         Static,
         TabbedContent,
         TabPane,
-        TextLog,
+        Log,
         )
 
 from .utils import (
@@ -129,10 +128,9 @@ class GPUStatsWidget(Static):
     def __init__(self, *args, cards=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.cards = cards
-        self.text_log = TextLog(highlight=True,
-                                markup=True,
-                                name='log_gpu',
-                                classes='logs')
+        self.text_log = Log(highlight=True,
+                            name='log_gpu',
+                            classes='logs')
         self.stats_table = DataTable(zebra_stripes=True,
                                      show_cursor=True,
                                      name='stats_table',
@@ -142,18 +140,17 @@ class GPUStatsWidget(Static):
 
     def on_mount(self) -> None:
         '''Fires when stats widget 'mounted', behaves like on first showing'''
-        self.update_log("[bold green]App started, logging begin!\n")
+        self.update_log("App started, logging begin!")
         # construct the table columns
         columns = list(self.get_column_data_mapping(None).keys())
+        self.update_log('Stat columns:')
         for column in columns:
+            self.update_log(f"  - '{column}'", show_ts=False)
             if column in ['Limit', 'Default', 'Capability']:
                 self.stats_table.add_column(label='[italic]' + column,
                                             key=column)
             else:
                 self.stats_table.add_column(label=column, key=column)
-        #    self.update_log(f'  - "{column}"')
-        self.update_log('[bold]Stat columns:')
-        self.update_log(dump(data=columns, default_flow_style=False, sort_keys=True))
         # do a one-off stat collection, populate table before the interval
         self.get_stats()
         # stand up the stat-collecting interval, twice per second
@@ -176,9 +173,19 @@ class GPUStatsWidget(Static):
             with TabPane("Logs", id="tab_logs"):
                 yield self.text_log
 
-    def update_log(self, message: str) -> None:
-        """Update the TextLog widget with a new message."""
-        self.text_log.write(message)
+    def update_log(self, message: str, show_ts: bool = True) -> None:
+        """Update the Log widget with a new message. 
+
+        Highest Textual version-requiring widget; >=0.32.0
+        Should be more performant than the old TextLog widget
+
+        Args:
+            message (str): The message to be added to the logging widget on the 'Logs' tab.
+            show_ts (bool, optional): If True (default), appends a timestamp to the message.
+        """
+        if show_ts:
+            message = f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}"
+        self.text_log.write_line(message)
 
     @work(exclusive=True)
     async def get_stats(self):
