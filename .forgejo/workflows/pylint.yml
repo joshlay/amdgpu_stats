@@ -14,7 +14,7 @@ jobs:
     - name: Install Package-based Deps
       run: |
         echo -e 'max_parallel_downloads=20\ndeltarpm=False\nfastestmirror=False' | tee -a /etc/dnf/dnf.conf
-        dnf -yq install nodejs git pylint python3-pip python3-venv
+        dnf -yq install nodejs git pylint python3-pip python3-virtualenv python3-pylint-venv
         dnf clean all
 #    - name: "Set up Python ${{ matrix.python-version }}"
 #      uses: https://github.com/actions/setup-python@v3
