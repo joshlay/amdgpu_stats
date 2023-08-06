@@ -30,4 +30,5 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         source venv/bin/activate
+        python3 -m pip list
         pylint $(git ls-files '*.py')
