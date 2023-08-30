@@ -1,21 +1,25 @@
 # amdgpu_stats
 
-A Python module/TUI for AMD GPU statistics
+A Python module/TUI for AMD GPU statistics.
+Tested _only_ on `RX6000` series cards and _(less so)_ with Ryzen CPU iGPUs.
 
-Tested _only_ on `RX6000` series cards; APUs and more _may_ be supported. Please file an issue if finding incompatibility!
+Please file an issue if finding incompatibility!
 
 ## Screenshots
 
 <details open>
   <summary>Main screen / stats</summary>
+
   ![Screenshot of the main stats table](https://git.init3.us/BraveTraveler/amdgpu_stats/raw/branch/master/screens/main.svg "Main screen")
 </details>
 <details>
   <summary>Usage graphs</summary>
+
   ![Screenshot of the 'graphing' scroll bars](https://git.init3.us/BraveTraveler/amdgpu_stats/raw/branch/master/screens/graphs.svg "Graphs")  
 </details>
 <details>
   <summary>Logs</summary>
+
   ![Screenshot of the 'Logs' tab pane](https://git.init3.us/BraveTraveler/amdgpu_stats/raw/branch/master/screens/logs.svg "Logs")
 </details>
 
