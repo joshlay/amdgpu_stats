@@ -3,7 +3,8 @@
 A Python module/TUI for AMD GPU statistics.
 Tested _only_ on `RX6000` series cards and _(less so)_ with Ryzen CPU iGPUs.
 
-Please file an issue if finding incompatibility!
+Please [file an issue](https://git.init3.us/BraveTraveler/amdgpu_stats/issues)
+if finding incompatibility!
 
 ## Screenshots
 
