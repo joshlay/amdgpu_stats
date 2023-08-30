@@ -12,12 +12,13 @@ jobs:
       run: |
         echo "Making DNF more performant with these directives:"
         echo -e 'max_parallel_downloads=20\ndeltarpm=False\nfastestmirror=False' | tee -a /etc/dnf/dnf.conf
-        dnf -yq install nodejs git python3-pip pylint
+        dnf -yq install nodejs git python3-pip
     - uses: actions/checkout@v3
     - name: Install Python dependencies
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install --no-compile -r requirements.txt
+        python3 -m pip install pylint
     - name: Show Python modules / versions
       run: python3 -m pip list
     - name: Analyse the code with pylint
