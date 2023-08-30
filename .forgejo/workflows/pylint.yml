@@ -7,30 +7,19 @@ jobs:
     runs-on: docker
     container:
       image: fedora:38  # lock to latest *stable*; rawhide/next is 'latest' tag
-#    strategy:
-#      matrix:
-#        python-version: ["3.8.17", "3.9.17", "3.10.12", "3.11.4"]
     steps:
     - name: Install package dependencies
       run: |
         echo "Making DNF more performant with these directives:"
         echo -e 'max_parallel_downloads=20\ndeltarpm=False\nfastestmirror=False' | tee -a /etc/dnf/dnf.conf
-        dnf -yq install nodejs git python3-pip python3-virtualenv
-#    - name: "Set up Python ${{ matrix.python-version }}"
-#      uses: https://github.com/actions/setup-python@v3
-#      with:
-#        python-version: ${{ matrix.python-version }}
+        dnf -yq install nodejs git python3-pip pylint
     - uses: actions/checkout@v3
     - name: Install Python dependencies
       run: |
-        python3 -m venv venv
-        source venv/bin/activate
         python3 -m pip install --upgrade pip
-        python3 -m pip install --upgrade wheel
-        python3 -m pip install pylint
         python3 -m pip install --no-compile -r requirements.txt
-    - name: Analysing the code with pylint
+    - name: Show Python modules / versions
+      run: python3 -m pip list
+    - name: Analyse the code with pylint
       run: |
-        source venv/bin/activate
-        python3 -m pip list
         pylint $(git ls-files '*.py')
