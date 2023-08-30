@@ -8,19 +8,24 @@ jobs:
     container:
       image: fedora:38  # lock to latest *stable*; rawhide/next is 'latest' tag
     steps:
-    - name: Install package dependencies
+    - name: Make DNF faster
       run: |
-        echo "Making DNF more performant with these directives:"
+        echo "Giving DNF these directives:"
         echo -e 'max_parallel_downloads=20\ndeltarpm=False\nfastestmirror=False' | tee -a /etc/dnf/dnf.conf
-        dnf -yq install nodejs git python3-pip
+
+    - name: Install package dependencies
+      run: dnf -yq install nodejs git python3-pip
+
     - uses: actions/checkout@v3
     - name: Install Python dependencies
       run: |
         python3 -m pip -q install --upgrade pip
         python3 -m pip -q install --no-compile -r requirements.txt
         python3 -m pip -q install pylint
+
     - name: Show Python modules / versions
       run: python3 -m pip list
+
     - name: Analyse the code with pylint
       run: |
         pylint $(git ls-files '*.py')
