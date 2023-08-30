@@ -1,6 +1,5 @@
 # TODO
 
-- fix freq2/mem clock on internal GPUs; report unknown
 - add an interval mode; log stats to logging widget occasionally
 - binding/method to save log to text file
 - add vram stats: used / total
