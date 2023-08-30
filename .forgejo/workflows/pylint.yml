@@ -19,9 +19,9 @@ jobs:
     - uses: actions/checkout@v3
     - name: Install Python dependencies
       run: |
-        python3 -m pip -q install --upgrade pip
-        python3 -m pip -q install --no-compile -r requirements.txt
-        python3 -m pip -q install pylint
+        python3 -m pip -qq install --upgrade pip
+        python3 -m pip -qq install --no-compile -r requirements.txt
+        python3 -m pip -qq install pylint
 
     - name: Show Python modules / versions
       run: python3 -m pip list
