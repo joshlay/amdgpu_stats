@@ -250,14 +250,28 @@ class app(App):  # pylint: disable=invalid-name
         yield Container(self.stats_widget)
         yield Footer()
 
+    def update_log(self, message: str, show_ts: bool = True) -> None:
+        """Update the TextLog widget with a new message.
+        Highest Textual version-requiring widget; >=0.32.0
+        Should be more performant than the old TextLog widget
+
+        Args:
+            message (str): The message to be added to the logging widget on the 'Logs' tab.
+            show_ts (bool, optional): If True (default), appends a timestamp to the message.
+        """
+        if show_ts:
+            message = f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}"
+        self.stats_widget.text_log.write_line(message)
+
     @work(exclusive=True)
     async def action_custom_dark(self) -> None:
         """An action to toggle dark mode.
 
         Wraps 'action_toggle_dark' with our logging"""
         self.app.dark = not self.app.dark
-        # inline conditional due to how Textual doesn't pretty notifs. for us like TextLog
-        message = f"[bold]Dark side: [italic][{'green' if self.app.dark else 'red'}]{self.app.dark}"
+        # with new log widget... styling doesn't get rendered, disabling. makes notifications look nice
+        # message = f"[bold]Dark side: [italic][{'green' if self.app.dark else 'red'}]{self.app.dark}"
+        message = f"Dark side: {self.app.dark}"
         self.notify(message)
         self.update_log(message)
 
@@ -284,13 +298,9 @@ class app(App):  # pylint: disable=invalid-name
         # take the screenshot, recording the path for logging/notification
         outpath = self.save_screenshot(path=screen_dir, filename=screen_name)
         # construct the log/notification message, then show it
-        message = f"[bold]Path: [/]'[green]{outpath}[/]'"
+        message = f"Path: '{outpath}'"
         self.notify(message, title='Screenshot captured', timeout=3.0)
         self.update_log(message)
-
-    def update_log(self, message: str) -> None:
-        """Update the TextLog widget with a new message."""
-        self.stats_widget.text_log.write(message)
 
     def action_custom_tab(self) -> None:
         """Toggle between the 'Stats' and 'Logs' tabs"""
