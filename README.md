@@ -1,7 +1,6 @@
 # amdgpu_stats
 
 A Python module/TUI for AMD GPU statistics.
-Tested _only_ on `RX6000` series cards and _(less so)_ with Ryzen iGPUs.
 
 Please [file an issue](https://github.com/joshlay/amdgpu_stats/issues) with feature
 requests or if incompatibility is found!
