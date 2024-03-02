@@ -1,9 +1,7 @@
 # amdgpu_stats
 
-A Python module/TUI for AMD GPU statistics.
-
-Please [file an issue](https://github.com/joshlay/amdgpu_stats/issues) with feature
-requests or if incompatibility is found!
+A Python module/TUI for AMD GPU statistics. Please [file an issue](https://github.com/joshlay/amdgpu_stats/issues)
+with feature requests or bug reports!
 
 ## Screenshots
 
