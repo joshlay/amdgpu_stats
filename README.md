@@ -1,38 +1,39 @@
 # amdgpu_stats
 
-A Python module/TUI for AMD GPU statistics.
-Tested _only_ on `RX6000` series cards and _(less so)_ with Ryzen CPU iGPUs.
-
-Please [file an issue](https://git.init3.us/BraveTraveler/amdgpu_stats/issues)
-if finding incompatibility!
+A Python module/TUI for AMD GPU statistics. Please [file an issue](https://github.com/joshlay/amdgpu_stats/issues)
+with feature requests or bug reports!
 
 ## Screenshots
 
 <details open>
   <summary>Main screen / stats</summary>
 
-  ![Screenshot of the main stats table](https://git.init3.us/BraveTraveler/amdgpu_stats/raw/branch/master/screens/main.svg "Main screen")
+  ![Screenshot of the main stats table](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/main.svg "Main screen")
 </details>
 <details>
   <summary>Usage graphs</summary>
 
-  ![Screenshot of the 'graphing' scroll bars](https://git.init3.us/BraveTraveler/amdgpu_stats/raw/branch/master/screens/graphs.svg "Graphs")  
+  ![Screenshot of the 'graphing' scroll bars](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/graphs.svg "Graphs")  
 </details>
 <details>
   <summary>Logs</summary>
 
-  ![Screenshot of the 'Logs' tab pane](https://git.init3.us/BraveTraveler/amdgpu_stats/raw/branch/master/screens/logs.svg "Logs")
+  ![Screenshot of the 'Logs' tab pane](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/logs.svg "Logs")
 </details>
 
 ## Installation
+
 ```bash
 pip install amdgpu-stats
 ```
-To use the _TUI_, run `amdgpu-stats` in your terminal of choice. For the _module_, see below!
+
+To use the _TUI_, run `amdgpu-stats` in your terminal of choice. For the _module_,
+see below!
 
 ## Module
 
 Introduction:
+
 ```python
 In [1]: import amdgpu_stats.utils
 
@@ -47,17 +48,11 @@ Out[4]: '659 MHz'
 ```
 
 For more information on what the module provides, please see:
- - [ReadTheDocs](https://amdgpu-stats.readthedocs.io/en/latest/)
- - `help('amdgpu_stats.utils')` in your interpreter
- - [The module source](https://git.init3.us/BraveTraveler/amdgpu_stats/src/branch/master/src/amdgpu_stats/utils.py)
 
-Feature requests [are encouraged](https://git.init3.us/BraveTraveler/amdgpu_stats/issues) 😀
+- [ReadTheDocs](https://amdgpu-stats.readthedocs.io/en/latest/)
+- `help('amdgpu_stats.utils')` in your interpreter
+- [The module source](https://github.com/joshlay/amdgpu_stats/blob/master/src/amdgpu_stats/utils.py)
 
 ## Requirements
-Only `Linux` is supported. Information is _completely_ sourced from interfaces in `sysfs`.
 
-It _may_ be necessary to update the `amdgpu.ppfeaturemask` parameter to enable metrics.
-
-This is assumed present for *control* over the elements being monitored. Untested without. 
-
-See [this Arch Wiki entry](https://wiki.archlinux.org/title/AMDGPU#Boot_parameter) for context.
+Only `Linux` is supported. Information is _completely_ sourced from `sysfs`.
