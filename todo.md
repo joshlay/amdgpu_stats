@@ -1,5 +1,7 @@
 # TODO
 
+- embrace OOP
+- use xdg-config-dir for things like colors/intervals
 - add an interval mode; log stats to logging widget occasionally
 - binding/method to save log to text file
 - add vram stats: used / total

@@ -218,7 +218,6 @@ class app(App):  # pylint: disable=invalid-name
 
     # apply stylesheet; this is watched/dynamically reloaded
     # can be edited (in installation dir) and seen live
-    # TODO: use xdg-config-dir, defaulting to the included style if not found
     CSS_PATH = 'style.css'
 
     # set the title - same as the class, but with spaces
