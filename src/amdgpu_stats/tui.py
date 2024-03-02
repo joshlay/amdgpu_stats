@@ -174,10 +174,7 @@ class GPUStatsWidget(Static):
                 yield self.text_log
 
     def update_log(self, message: str, show_ts: bool = True) -> None:
-        """Update the Log widget with a new message. 
-
-        Highest Textual version-requiring widget; >=0.32.0
-        Should be more performant than the old TextLog widget
+        """Update the Log widget/pane with a new message.
 
         Args:
             message (str): The message to be added to the logging widget on the 'Logs' tab.
@@ -221,10 +218,12 @@ class app(App):  # pylint: disable=invalid-name
 
     # apply stylesheet; this is watched/dynamically reloaded
     # can be edited (in installation dir) and seen live
+    # TODO: use xdg-config-dir, defaulting to the included style if not found
     CSS_PATH = 'style.css'
 
     # set the title - same as the class, but with spaces
     TITLE = 'AMD GPU Stats'
+
     # set a default subtitle, will change with the active tab
     SUB_TITLE = f'cards: {list(AMDGPU_CARDS)}'
 
