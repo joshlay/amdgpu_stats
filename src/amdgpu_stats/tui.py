@@ -35,7 +35,7 @@ from textual.widgets import (
         )
 
 from .utils import (
-        AMDGPU_CARDS,
+        CARDS,
         get_fan_rpm,
         get_power_stats,
         get_temp_stat,
@@ -45,6 +45,7 @@ from .utils import (
 )
 # rich markup reference:
 #    https://rich.readthedocs.io/en/stable/markup.html
+
 
 class GPUStatsWidget(Static):
     """The main stats widget."""
@@ -89,7 +90,7 @@ class GPUStatsWidget(Static):
                 "Card": "",
                 "Core clock": "",
                 "Memory clock": "",
-                "Utilization": "",
+                "Usage": "",
                 "Voltage": "",
                 "Power": "",
                 "Limit": "",
@@ -104,7 +105,7 @@ class GPUStatsWidget(Static):
             "Card": card,
             "Core clock": get_clock('core', card=card, format_freq=True),
             "Memory clock": get_clock('memory', card=card, format_freq=True),
-            "Utilization": f'{get_gpu_usage(card=card)}%',
+            "Usage": f'{get_gpu_usage(card=card)}%',
             "Voltage": f'{get_voltage(card=card)}V',
             "Power": power_stats['usage'],
             "Limit": power_stats['lim'],
@@ -162,7 +163,7 @@ class GPUStatsWidget(Static):
             with TabPane("Stats", id="tab_stats"):
                 yield self.stats_table
             with TabPane("Graphs", id="tab_graphs", classes="tab_graphs"):
-                for card in AMDGPU_CARDS:
+                for card in CARDS:
                     yield Vertical(
                             Label(f'[bold]{card}'),
                             Label('Core:'),
@@ -189,9 +190,7 @@ class GPUStatsWidget(Static):
         '''Function to fetch stats / update the table for each AMD GPU found'''
         for card in self.cards:
             self.data = self.get_column_data_mapping(card)
-            # Update usage bars
-            if self.data['Utilization'] is not None:
-                self.query_one(f'#bar_{card}_util').update(total=100, progress=float(self.data['Utilization'].replace('%', '')))
+
             # handle the table data appopriately
             # if needs populated anew or updated
             if self.table_needs_init:
@@ -201,13 +200,22 @@ class GPUStatsWidget(Static):
                     Text(str(cell), style="normal", justify="right") for cell in self.data.values()
                 ]
                 self.stats_table.add_row(*styled_row, key=card)
-                hwmon_dir = AMDGPU_CARDS[card]
+                hwmon_dir = CARDS[card]
                 self.update_log(f"Added row for '{card}', stats dir: '{hwmon_dir}'")
             else:
-                # Update existing rows, retaining styling/justification
+                # Update existing table rows, retaining styling/justification
                 for column, value in self.data.items():
-                    styled_cell = Text(str(value), style="normal", justify="right")
-                    self.stats_table.update_cell(card, column, styled_cell)
+                    self.stats_table.update_cell(card,
+                                                 column,
+                                                 Text(str(value),
+                                                      style="normal",
+                                                      justify="right"))
+
+            # Update usage bars
+            if self.data['Usage'] is not None:
+                self.query_one(f'#bar_{card}_util').update(total=100,
+                                                           progress=float(self.data['Usage'].replace('%', '')))
+
         if self.table_needs_init:
             # if this is the first time updating the table, mark it initialized
             self.table_needs_init = False
@@ -224,7 +232,7 @@ class app(App):  # pylint: disable=invalid-name
     TITLE = 'AMD GPU Stats'
 
     # set a default subtitle, will change with the active tab
-    SUB_TITLE = f'cards: {list(AMDGPU_CARDS)}'
+    SUB_TITLE = f'cards: {list(CARDS)}'
 
     # setup keybinds
     BINDINGS = [
@@ -239,7 +247,7 @@ class app(App):  # pylint: disable=invalid-name
     ]
 
     # create an instance of the stats widget with all cards
-    stats_widget = GPUStatsWidget(cards=AMDGPU_CARDS,
+    stats_widget = GPUStatsWidget(cards=CARDS,
                                   name="stats_widget")
 
     def compose(self) -> ComposeResult:
@@ -322,4 +330,4 @@ class app(App):  # pylint: disable=invalid-name
         if active_tab == "logs":
             self.sub_title = active_tab  # pylint: disable=attribute-defined-outside-init
         elif active_tab == "stats":
-            self.sub_title = f'cards: {list(AMDGPU_CARDS)}'  # pylint: disable=attribute-defined-outside-init
+            self.sub_title = f'cards: {list(CARDS)}'  # pylint: disable=attribute-defined-outside-init
