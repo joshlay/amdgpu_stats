@@ -37,7 +37,7 @@ Introduction:
 ```python
 In [1]: import amdgpu_stats.utils
 
-In [2]: amdgpu_stats.utils.AMDGPU_CARDS
+In [2]: amdgpu_stats.utils.CARDS
 Out[2]: {'card0': '/sys/class/drm/card0/device/hwmon/hwmon9'}
 
 In [3]: amdgpu_stats.utils.get_core_stats('card0')

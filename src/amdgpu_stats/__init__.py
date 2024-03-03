@@ -3,7 +3,7 @@
 import sys
 from .tui import app
 from .utils import (
-        AMDGPU_CARDS,
+        CARDS,
 )
 
 
@@ -12,7 +12,7 @@ def check_for_cards() -> bool:
 
     Returns:
         bool: If any AMD cards found or not"""
-    if len(AMDGPU_CARDS) > 0:
+    if len(CARDS) > 0:
         return True
     return False
 
