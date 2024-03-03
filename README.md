@@ -47,6 +47,22 @@ In [4]: amdgpu_stats.utils.get_clock('core', format_freq=True)
 Out[4]: '659 MHz' 
 ```
 
+Attempts are made to provide guidance as `ValueErrors`. For example:
+
+```python
+In [2]: amdgpu_stats.utils.CARDS
+Out[2]: {'card1': '/sys/class/drm/card1/device/hwmon/hwmon3'}
+
+In [3]: amdgpu_stats.utils.get_core_stats('card0')
+[...]
+File ~/.local/lib/python3.12/site-packages/amdgpu_stats/utils.py:82, in validate_card(card)
+     80     raise ValueError("No AMD GPUs or hwmon directories found")
+     81 # if 'card' was specified (not None) but invalid (not in 'CARDS'), raise a helpful error
+---> 82 raise ValueError(f"Invalid card: '{card}'. Must be one of: {list(CARDS.keys())}")
+
+ValueError: Invalid card: 'card0'. Must be one of: ['card1']
+```
+
 For more information on what the module provides, please see:
 
 - [ReadTheDocs](https://amdgpu-stats.readthedocs.io/en/latest/)
