@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.abspath(os.path.join("..", "..", "src")))
 project = 'amdgpu_stats'
 copyright = '2024, Josh Lay'
 author = 'Josh Lay'
-release = '0.1.22'
+release = '0.1.23'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
