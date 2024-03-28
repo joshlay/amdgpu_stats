@@ -21,6 +21,10 @@ with feature requests or bug reports!
   ![Screenshot of the 'Logs' tab pane](https://raw.githubusercontent.com/joshlay/amdgpu_stats/master/screens/logs.svg "Logs")
 </details>
 
+## Requirements
+
+Only `Linux` is supported. Information is _completely_ sourced from `sysfs`.
+
 ## Installation
 
 ```bash
@@ -68,7 +72,3 @@ For more information on what the module provides, please see:
 - [ReadTheDocs](https://amdgpu-stats.readthedocs.io/en/latest/)
 - `help('amdgpu_stats.utils')` in your interpreter
 - [The module source](https://github.com/joshlay/amdgpu_stats/blob/master/src/amdgpu_stats/utils.py)
-
-## Requirements
-
-Only `Linux` is supported. Information is _completely_ sourced from `sysfs`.
