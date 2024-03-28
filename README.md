@@ -23,7 +23,8 @@ with feature requests or bug reports!
 
 ## Requirements
 
-Only `Linux` is supported. Information is _completely_ sourced from `sysfs`.
+Only `Linux` is supported. Information is _completely_ sourced from the `amdgpu`
+driver via [sysfs](https://docs.kernel.org/gpu/amdgpu/thermal.html)
 
 ## Installation
 
