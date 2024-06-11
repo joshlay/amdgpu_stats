@@ -136,18 +136,18 @@ def get_power_stats(card: Optional[str] = None) -> dict:
     card = validate_card(card)
     hwmon_dir = CARDS[card]
 
-    # different GPUs/drivers may offer either averaged or instant readouts [in different files]; adjust gracefully
-    for usage_file in (path.join(hwmon_dir, 'power1_input'), path.join(hwmon_dir, 'power1_average')):
-        if path.exists(usage_file):
-            usage = read_stat(usage_file, stat_type='power')
-
     _pwr = {"limit": read_stat(path.join(hwmon_dir, "power1_cap"), stat_type='power'),
             "usage_pct": 0,
-            "usage": usage,
+            "usage": None,
             "capability": read_stat(path.join(hwmon_dir, "power1_cap_max"), stat_type='power'),
             "default": read_stat(path.join(hwmon_dir, "power1_cap_default"), stat_type='power')}
 
-    if _pwr['limit'] is not None:
+    # different GPUs/drivers may offer either averaged or instant readouts [in different files]; adjust gracefully
+    for usage_file in (path.join(hwmon_dir, 'power1_input'), path.join(hwmon_dir, 'power1_average')):
+        if path.exists(usage_file):
+            _pwr['usage'] = read_stat(usage_file, stat_type='power')
+
+    if _pwr['usage'] is not None:
         _pwr['usage_pct'] = round((_pwr['usage'] / _pwr['limit']) * 100, 1)
 
     return _pwr
@@ -212,7 +212,7 @@ def get_clock(domain: str, card: Optional[str] = None, format_freq: Optional[boo
         clock_file = path.join(hwmon_dir, "freq2_input")
     # handle output processing
     # check if clock file exists, if not - return 'none'
-    if path.exists(clock_file):
+    if path.exists(clock_file):  # pylint: disable=possibly-used-before-assignment
         if format_freq:
             return format_frequency(int(read_stat(clock_file)))
         return int(read_stat(clock_file))
