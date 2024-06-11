@@ -61,7 +61,7 @@ class GPUStatsWidget(Static):
         # ... then map to a smaller dict that's used to update the table
         _all_pwr = get_power_stats(card=card)
         power_stats = {
-                "usage": _all_pwr["average"],
+                "usage": _all_pwr["usage"],
                 "lim": _all_pwr["limit"],
                 "def": _all_pwr["default"],
                 "cap": _all_pwr["capability"],

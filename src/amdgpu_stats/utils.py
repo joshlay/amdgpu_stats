@@ -135,14 +135,20 @@ def get_power_stats(card: Optional[str] = None) -> dict:
     """
     card = validate_card(card)
     hwmon_dir = CARDS[card]
+
+    # different GPUs/drivers may offer either averaged or instant readouts [in different files]; adjust gracefully
+    for usage_file in (path.join(hwmon_dir, 'power1_input'), path.join(hwmon_dir, 'power1_average')):
+        if path.exists(usage_file):
+            usage = read_stat(usage_file, stat_type='power')
+
     _pwr = {"limit": read_stat(path.join(hwmon_dir, "power1_cap"), stat_type='power'),
-            "limit_pct": 0,
-            "average": read_stat(path.join(hwmon_dir, "power1_average"), stat_type='power'),
+            "usage_pct": 0,
+            "usage": usage,
             "capability": read_stat(path.join(hwmon_dir, "power1_cap_max"), stat_type='power'),
             "default": read_stat(path.join(hwmon_dir, "power1_cap_default"), stat_type='power')}
 
     if _pwr['limit'] is not None:
-        _pwr['limit_pct'] = round((_pwr['average'] / _pwr['limit']) * 100, 1)
+        _pwr['usage_pct'] = round((_pwr['usage'] / _pwr['limit']) * 100, 1)
 
     return _pwr
 

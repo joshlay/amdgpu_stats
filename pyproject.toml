@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "amdgpu-stats"
-version = "0.1.23"
+version = "0.1.24"
 description = "A module/TUI for AMD GPU statistics"
 authors = ["Josh Lay <pypi@jlay.io>"]
 repository = "https://github.com/joshlay/amdgpu_stats"
@@ -18,6 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
 [tool.poetry.dependencies]
